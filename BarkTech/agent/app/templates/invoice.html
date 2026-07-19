@@ -31,19 +31,7 @@
     border-bottom: 2px solid var(--brand-maroon);
   }
   .header img.logo {
-    height: 50px;
-    margin-bottom: 4px;
-  }
-  .header .company-name {
-    font-size: 18pt;
-    font-weight: 700;
-    color: var(--brand-navy);
-    letter-spacing: 1px;
-  }
-  .header .company-tagline {
-    font-size: 9pt;
-    color: var(--brand-maroon);
-    font-style: italic;
+    height: 65px;
     margin-bottom: 6px;
   }
   .header .invoice-title {
@@ -185,7 +173,7 @@
     font-size: 8.5pt;
   }
   .sig-img {
-    width: 140px;
+    width: 200px;
     height: auto;
     margin-bottom: 4px;
   }
@@ -224,8 +212,6 @@
   <!-- ═══════ A. HEADER ═══════ -->
   <div class="header">
     <img src="file://{{ logo_path }}" alt="Bark Technologies" class="logo">
-    <div class="company-name">BARK TECHNOLOGIES</div>
-    <div class="company-tagline">Machinery &amp; Packaging Solutions</div>
     <div class="invoice-title">TAX INVOICE: {{ invoice_number }}</div>
   </div>
 
@@ -345,11 +331,9 @@
       <!-- Right: Signature -->
       <td class="sig-cell">
         <div class="sig-text">For an on Behalf of <span style="color:var(--brand-navy);">BARKTECHNOLOGIES</span></div>
-        <div style="margin-top: 20px;">
+        <div style="margin-top: 15px;">
           <img src="file://{{ signature_path }}" class="sig-img" alt="Signature">
         </div>
-        <div style="margin-top: 4px; font-weight:700; font-size:9pt; color:var(--brand-navy);">For.</div>
-        <div class="sig-company">BARK TECHNOLOGIES</div>
         <div style="margin-top: 8px; font-weight:700; font-size:9pt; color:var(--brand-navy);">Thanks &amp; Regards</div>
       </td>
     </tr>
