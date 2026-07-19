@@ -34,6 +34,27 @@
     height: 65px;
     margin-bottom: 6px;
   }
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+  .header-text {
+    text-align: left;
+  }
+  .company-name {
+    font-size: 20pt;
+    font-weight: 700;
+    color: var(--brand-navy);
+    letter-spacing: 1px;
+  }
+  .company-tagline {
+    font-size: 10pt;
+    color: var(--brand-maroon);
+    font-style: italic;
+  }
   .header .invoice-title {
     font-size: 14pt;
     font-weight: 700;
@@ -211,7 +232,13 @@
 
   <!-- ═══════ A. HEADER ═══════ -->
   <div class="header">
-    <img src="file://{{ logo_path }}" alt="Bark Technologies" class="logo">
+    <div class="header-row">
+      <img src="file://{{ logo_path }}" alt="Bark Technologies" class="logo">
+      <div class="header-text">
+        <div class="company-name">BARK TECHNOLOGIES</div>
+        <div class="company-tagline">Machinery &amp; Packaging Solutions</div>
+      </div>
+    </div>
     <div class="invoice-title">TAX INVOICE: {{ invoice_number }}</div>
   </div>
 
