@@ -24,37 +24,45 @@ invoice_router = APIRouter(prefix="/invoice", tags=["invoice"])
 
 
 async def _llm_format(text: str, context: str) -> str:
-    """Call the LLM to professionally format text for invoice use."""
+    """Call the LLM to professionally format text for invoice use.
+
+    Returns plain text only -- no markdown, no asterisks, no backticks.
+    """
     system_prompts = {
         "address": (
             "You are a professional document formatter. Rewrite the following address "
             "into a clean, properly formatted address suitable for a tax invoice. "
             "Use proper line breaks, capitalize correctly (state abbreviations like UP, "
             "GUJ in caps, pin codes on their own line), and ensure the address reads "
-            "naturally. Return ONLY the formatted address, nothing else."
+            "naturally. Return ONLY the plain formatted address text. "
+            "Do NOT use any markdown formatting, asterisks, backticks, or bullet points."
         ),
         "description": (
             "You are a professional technical writer for an industrial machinery company. "
             "Rewrite the following product/service description to be clear, concise, and "
             "professional for use on a tax invoice. Use proper capitalization, technical "
             "units in uppercase (HP, KW, MM, KG), and keep it factual. "
-            "Return ONLY the formatted description, nothing else."
+            "Return ONLY the plain formatted description text. "
+            "Do NOT use any markdown formatting, asterisks, backticks, or bullet points."
         ),
         "name": (
             "You are a professional formatter. Clean up the following name to be properly "
             "capitalized and professional for use on a tax invoice. "
-            "Return ONLY the formatted name, nothing else."
+            "Return ONLY the plain formatted name text. "
+            "Do NOT use any markdown formatting, asterisks, backticks, or bullet points."
         ),
         "company": (
             "You are a professional formatter. Clean up the following company name to be "
             "properly formatted for use on a tax invoice. Add proper suffixes like Pvt. Ltd., "
             "LLP, etc. if they seem appropriate based on the context. "
-            "Return ONLY the formatted company name, nothing else."
+            "Return ONLY the plain formatted company name text. "
+            "Do NOT use any markdown formatting, asterisks, backticks, or bullet points."
         ),
         "general": (
             "You are a professional document formatter. Clean up the following text to be "
             "properly formatted for use on a tax invoice. Fix capitalization, spacing, and "
-            "make it professional. Return ONLY the formatted text, nothing else."
+            "make it professional. Return ONLY the plain formatted text. "
+            "Do NOT use any markdown formatting, asterisks, backticks, or bullet points."
         ),
     }
 
@@ -80,7 +88,16 @@ async def _llm_format(text: str, context: str) -> str:
             )
             if resp.status_code == 200:
                 data = resp.json()
-                return data["choices"][0]["message"]["content"].strip().strip('"')
+                result = data["choices"][0]["message"]["content"].strip()
+                # Strip any markdown artifacts the LLM might add
+                result = result.strip('"').strip("'")
+                result = result.strip("*").strip("`")
+                result = result.replace("**", "").replace("__", "")
+                result = result.replace("`", "")
+                # Remove leading markdown bullet points
+                if result.startswith("- ") or result.startswith("* "):
+                    result = result[2:]
+                return result.strip()
     except Exception as e:
         logger.warning(f"LLM format failed, falling back to basic formatting: {e}")
 

@@ -31,11 +31,11 @@ export function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  const user = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
+  const user = (() => { try { return JSON.parse(localStorage.getItem('bark_auth_user') || '{}'); } catch { return {}; } })();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('bark_auth_token');
+    localStorage.removeItem('bark_auth_user');
     navigate('/admin/login');
   };
 

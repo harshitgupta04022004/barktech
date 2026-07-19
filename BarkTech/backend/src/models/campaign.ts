@@ -25,19 +25,19 @@ const campaignSchema = new Schema<ICampaign>(
     content: { type: String, required: true },
     platforms: {
       type: [String],
-      enum: ['linkedin', 'instagram', 'facebook', 'twitter', 'reddit'],
-      default: [],
+      enum: ['linkedin', 'instagram', 'facebook', 'twitter', 'reddit', 'email', 'all'],
+      default: ['all'],
     },
     status: {
       type: String,
-      enum: ['draft', 'scheduled', 'published'],
+      enum: ['draft', 'scheduled', 'published', 'paused'],
       default: 'draft',
     },
     scheduledAt: { type: Date },
     publishedAt: { type: Date },
     media: [{ type: String }],
     tags: [{ type: String }],
-    author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    author: { type: Schema.Types.ObjectId, ref: 'User', default: null },
   },
   { timestamps: true }
 );

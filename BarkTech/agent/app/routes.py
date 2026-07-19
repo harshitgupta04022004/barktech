@@ -9,6 +9,7 @@ Per architecture spec:
 
 import logging
 import time
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -50,7 +51,7 @@ async def _save_chat_log(
 
         client = AsyncIOMotorClient(config.mongodb_uri)
         db = client[config.mongodb_db]
-        await db.chat_logs.insert_one(
+        await db.chatlogs.insert_one(
             {
                 "sessionId": session_id,
                 "userEmail": user_email,
@@ -65,6 +66,8 @@ async def _save_chat_log(
                 "cost": cost,
                 "toolCalls": tool_calls or [],
                 "latencyMs": latency_ms,
+                "createdAt": datetime.utcnow(),
+                "updatedAt": datetime.utcnow(),
             }
         )
     except Exception as e:

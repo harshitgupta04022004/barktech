@@ -2,364 +2,283 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  @page {
-    size: A4;
-    margin: 15mm 15mm 15mm 15mm;
-  }
+  @page { size: A4; margin: 10mm; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --brand-navy: #1b2a5e;
+    --brand-maroon: #8b1a1a;
+    --brand-gold: #c9a15a;
+    --table-header-red: #c0392b;
+    --band-red: #b30000;
+    --link-blue: #1155cc;
+  }
+
   body {
-    font-family: 'Arial', 'Helvetica', sans-serif;
-    font-size: 9pt;
+    font-family: "Times New Roman", Times, serif;
+    font-size: 10pt;
     color: #000;
-    line-height: 1.3;
+    line-height: 1.35;
   }
   .page { width: 100%; }
 
-  /* Header */
+  /* ── A. Header ── */
   .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    border-bottom: 2px solid #e65100;
-    padding-bottom: 8px;
-    margin-bottom: 10px;
+    text-align: center;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--brand-maroon);
   }
-  .header-left { display: flex; align-items: center; gap: 10px; }
-  .header-left img { height: 40px; }
-  .header-title {
-    font-size: 14pt;
-    font-weight: bold;
-    color: #e65100;
+  .header img.logo {
+    height: 50px;
+    margin-bottom: 4px;
+  }
+  .header .company-name {
+    font-size: 18pt;
+    font-weight: 700;
+    color: var(--brand-navy);
     letter-spacing: 1px;
   }
-
-  /* Amount in words */
-  .amount-words {
-    background: #f5f5f5;
-    padding: 6px 10px;
-    font-size: 8.5pt;
-    font-weight: bold;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-    border-left: 3px solid #e65100;
+  .header .company-tagline {
+    font-size: 9pt;
+    color: var(--brand-maroon);
+    font-style: italic;
+    margin-bottom: 6px;
+  }
+  .header .invoice-title {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #000;
+    margin-top: 4px;
   }
 
-  /* Invoice number badge */
-  .invoice-badge {
-    text-align: right;
+  /* ── B. Top Info Block (2-col bordered table) ── */
+  .info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 6px;
+    font-size: 9pt;
+  }
+  .info-table td {
+    border: 1px solid #000;
+    padding: 6px 8px;
+    vertical-align: top;
+    width: 50%;
+  }
+  .info-label {
+    font-weight: 700;
+    text-decoration: underline;
+    font-size: 9pt;
+    color: #000;
+  }
+  .info-bold {
+    font-weight: 700;
     font-size: 10pt;
-    font-weight: bold;
-    color: #e65100;
-    margin-bottom: 8px;
   }
-
-  /* Two column layout */
-  .two-col {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-  .col { flex: 1; }
-  .col-box {
-    border: 1px solid #ccc;
-    padding: 8px;
-    min-height: 100px;
-  }
-  .col-box h3 {
+  .info-line {
     font-size: 9pt;
-    font-weight: bold;
-    color: #e65100;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    border-bottom: 1px solid #e65100;
-    padding-bottom: 3px;
+    line-height: 1.35;
+    margin-bottom: 1px;
   }
-  .col-box .field-label {
-    font-weight: bold;
-    font-size: 8pt;
-    color: #333;
-  }
-  .col-box .field-value {
-    font-size: 8.5pt;
-    margin-bottom: 2px;
-  }
-  .col-box .address-block {
-    font-size: 8.5pt;
-    line-height: 1.4;
-    margin-bottom: 4px;
-  }
-
-  /* Ship To */
-  .ship-to {
-    border: 1px solid #ccc;
-    padding: 8px;
-    margin-bottom: 10px;
-  }
-  .ship-to h3 {
+  .field-label {
+    font-weight: 700;
     font-size: 9pt;
-    font-weight: bold;
-    color: #e65100;
-    margin-bottom: 4px;
-    text-transform: uppercase;
-    border-bottom: 1px solid #e65100;
-    padding-bottom: 3px;
   }
 
-  /* Details / Mode */
-  .details-mode {
-    border: 1px solid #ccc;
-    padding: 8px;
-    margin-bottom: 10px;
-  }
-  .details-mode h3 {
-    font-size: 9pt;
-    font-weight: bold;
-    color: #e65100;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    border-bottom: 1px solid #e65100;
-    padding-bottom: 3px;
-  }
-  .details-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px 16px;
-    font-size: 8.5pt;
-  }
-  .details-grid .field-label {
-    font-weight: bold;
-    color: #333;
-  }
-
-  /* Items Table */
+  /* ── C. Items Table ── */
   .items-table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 10px;
-    font-size: 8.5pt;
+    margin-bottom: 4px;
+    font-size: 9pt;
+  }
+  .items-table th,
+  .items-table td {
+    border: 1px solid #000;
+    padding: 4px 6px;
   }
   .items-table th {
-    background: #e65100;
-    color: white;
-    padding: 6px 8px;
-    text-align: left;
-    font-size: 8pt;
+    background: var(--table-header-red);
+    color: #fff;
+    font-weight: 700;
+    font-size: 8.5pt;
     text-transform: uppercase;
-    font-weight: bold;
   }
-  .items-table th:last-child,
-  .items-table td:last-child {
+  .items-table th:nth-child(n+3),
+  .items-table td:nth-child(n+3) {
     text-align: right;
   }
-  .items-table th:nth-child(3),
-  .items-table td:nth-child(3),
-  .items-table th:nth-child(4),
-  .items-table td:nth-child(4),
-  .items-table th:nth-child(5),
-  .items-table td:nth-child(5) {
-    text-align: right;
+  .items-table th:nth-child(1),
+  .items-table td:nth-child(1) {
+    text-align: center;
+    width: 5%;
   }
   .items-table td {
-    padding: 5px 8px;
-    border-bottom: 1px solid #eee;
-  }
-  .items-table tr:nth-child(even) td {
-    background: #fafafa;
+    font-size: 9pt;
   }
 
-  /* Totals */
-  .totals-section {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 12px;
-  }
+  /* ── Totals block (right-aligned inside table) ── */
   .totals-table {
-    width: 280px;
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 6px;
     font-size: 9pt;
   }
   .totals-table td {
-    padding: 3px 8px;
+    border: 1px solid #000;
+    padding: 3px 6px;
   }
-  .totals-table td:last-child {
+  .totals-table .label-cell {
     text-align: right;
-    font-weight: bold;
+    font-weight: 700;
+    width: 70%;
+  }
+  .totals-table .value-cell {
+    text-align: right;
+    font-weight: 700;
+    width: 30%;
   }
   .totals-table .grand-total td {
-    border-top: 2px solid #e65100;
-    font-size: 10pt;
-    font-weight: bold;
-    color: #e65100;
-    padding-top: 5px;
+    font-weight: 700;
+    font-size: 11pt;
+    border-top: 2px solid #000;
   }
 
-  /* Bank Details */
-  .bank-section {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 10px;
-    font-size: 8.5pt;
-  }
-  .bank-left {
-    flex: 1;
-    border: 1px solid #ccc;
-    padding: 8px;
-  }
-  .bank-right {
-    flex: 1;
-    border: 1px solid #ccc;
-    padding: 8px;
-  }
-  .bank-section h3 {
-    font-size: 9pt;
-    font-weight: bold;
-    color: #e65100;
-    margin-bottom: 4px;
-    border-bottom: 1px solid #e65100;
-    padding-bottom: 3px;
-  }
-  .bank-section .field-label {
-    font-weight: bold;
-    color: #333;
-  }
-
-  /* Signature */
-  .signature-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-top: 15px;
-    padding-top: 10px;
-  }
-  .signature-left {
-    font-size: 8pt;
-    color: #555;
-  }
-  .signature-right {
-    text-align: right;
-    font-size: 8.5pt;
-  }
-  .signature-right .sig-label {
-    font-weight: bold;
-    color: #e65100;
-    margin-bottom: 30px;
-  }
-  .signature-line {
-    border-top: 1px solid #999;
-    width: 150px;
-    margin-left: auto;
-    padding-top: 3px;
-    font-size: 8pt;
-    color: #555;
-  }
-
-  /* Footer */
-  .footer-note {
-    margin-top: 10px;
-    font-size: 7.5pt;
-    color: #777;
+  /* ── D. Amount-in-Words Banner ── */
+  .amount-banner {
+    background: var(--band-red);
+    color: #fff;
+    font-weight: 700;
     text-align: center;
-    border-top: 1px solid #ddd;
-    padding-top: 5px;
+    padding: 8px 10px;
+    font-size: 11pt;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* ── E. Bank & Signature Block ── */
+  .bank-sig-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 6px;
+    font-size: 8.5pt;
+  }
+  .bank-sig-table td {
+    border: 1px solid #000;
+    padding: 4px 6px;
+    vertical-align: top;
+  }
+  .bank-sig-table .bank-cell {
+    width: 55%;
+  }
+  .bank-sig-table .sig-cell {
+    width: 45%;
+    text-align: center;
+    border-left: none;
+  }
+  .bank-field-label {
+    font-weight: 700;
+    font-size: 8.5pt;
+  }
+  .bank-field-value {
+    font-size: 8.5pt;
+  }
+  .sig-img {
+    width: 140px;
+    height: auto;
+    margin-bottom: 4px;
+  }
+  .sig-text {
+    font-weight: 700;
+    font-size: 9pt;
+    color: var(--brand-navy);
+    margin-bottom: 2px;
+  }
+  .sig-company {
+    font-weight: 700;
+    font-size: 9pt;
+    color: var(--brand-navy);
+  }
+
+  /* ── F. Footer ── */
+  .footer-note {
+    font-size: 8pt;
+    color: #555;
+    text-align: center;
+    border-top: 1px solid #ccc;
+    padding-top: 4px;
+    margin-top: 6px;
   }
   .page-number {
     text-align: center;
-    font-size: 7.5pt;
+    font-size: 8pt;
     color: #999;
-    margin-top: 3px;
+    margin-top: 2px;
   }
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- Header with logo -->
+  <!-- ═══════ A. HEADER ═══════ -->
   <div class="header">
-    <div class="header-left">
-      <img src="file://{{ logo_path }}" alt="Bark Technologies">
-      <div>
-        <div class="header-title">TAX INVOICE</div>
-      </div>
-    </div>
+    <img src="file://{{ logo_path }}" alt="Bark Technologies" class="logo">
+    <div class="company-name">BARK TECHNOLOGIES</div>
+    <div class="company-tagline">Machinery &amp; Packaging Solutions</div>
+    <div class="invoice-title">TAX INVOICE: {{ invoice_number }}</div>
   </div>
 
-  <!-- Amount in Words -->
-  <div class="amount-words">
-    {{ amount_in_words }}
-  </div>
+  <!-- ═══════ B. TOP INFO BLOCK (2-col bordered table) ═══════ -->
+  <table class="info-table">
+    <tr>
+      <!-- Left: BILL TO -->
+      <td>
+        <div class="info-label">BILL TO,</div>
+        <div class="info-bold">{{ customer_name }}</div>
+        {% if customer_company %}<div class="info-line">{{ customer_company }}</div>{% endif %}
+        {% if customer_address %}<div class="info-line">{{ customer_address }}</div>{% endif %}
+        {% if customer_gst %}<div class="info-line"><span class="field-label">GSTIN:</span> {{ customer_gst }}</div>{% endif %}
+        {% if customer_phone %}<div class="info-line"><span class="field-label">CONTACT NO.</span> {{ customer_phone }}</div>{% endif %}
+        {% if ref_attended_by %}<div class="info-line"><span class="field-label">REF BY &amp; ATTEND BY:</span> {{ ref_attended_by }}</div>{% endif %}
 
-  <!-- Invoice Number -->
-  <div class="invoice-badge">
-    TAX INVOICE: {{ invoice_number }}
-  </div>
-
-  <!-- Bill To & From -->
-  <div class="two-col">
-    <div class="col">
-      <div class="col-box">
-        <h3>Bill To</h3>
-        <div class="field-value" style="font-weight:bold; font-size:10pt;">{{ customer_name }}</div>
-        {% if customer_company %}
-        <div class="field-value">{{ customer_company }}</div>
+        <br>
+        <div class="info-label">SHIP TO,</div>
+        {% if ship_to_address %}
+        <div class="info-line">{{ ship_to_address }}</div>
+        {% else %}
+        <div class="info-line"><span class="info-bold">FACTORY ADDRESS</span></div>
         {% endif %}
-        {% if customer_address %}
-        <div class="address-block">{{ customer_address }}</div>
-        {% endif %}
-        {% if customer_gst %}
-        <div class="field-value"><span class="field-label">GSTIN:</span> {{ customer_gst }}</div>
-        {% endif %}
-        {% if customer_phone %}
-        <div class="field-value"><span class="field-label">CONTACT NO.</span> {{ customer_phone }}</div>
-        {% endif %}
-        {% if ref_attended_by %}
-        <div class="field-value"><span class="field-label">REF BY & ATTEND BY:</span> {{ ref_attended_by }}</div>
-        {% endif %}
-      </div>
-    </div>
-    <div class="col">
-      <div class="col-box">
-        <h3>From</h3>
-        <div class="field-value" style="font-weight:bold; font-size:10pt;">{{ company_name }}</div>
-        <div class="address-block">{{ company_address }}</div>
-        <div class="field-value"><span class="field-label">GST:</span> {{ company_gst }}</div>
-        <div class="field-value"><span class="field-label">CONTACT NUMBER:</span> {{ company_contact }}</div>
-        <div class="field-value"><span class="field-label">EMAIL:</span> {{ company_email }}</div>
-      </div>
-    </div>
-  </div>
+      </td>
+      <!-- Right: FROM + DETAILS -->
+      <td>
+        <div class="info-label">FROM,</div>
+        <div class="info-bold">{{ company_name }}</div>
+        <div class="info-line"><span class="field-label">ADD:</span> {{ company_address }}</div>
+        <div class="info-line"><span class="field-label">GST:</span> {{ company_gst }}</div>
+        <div class="info-line"><span class="field-label">CONTACTNUMBER :</span> {{ company_contact }}</div>
+        <div class="info-line"><span class="field-label">EMAIL:</span> {{ company_email }}</div>
 
-  <!-- Ship To -->
-  <div class="ship-to">
-    <h3>Ship To</h3>
-    {% if ship_to_address %}
-    <div class="address-block">{{ ship_to_address }}</div>
-    {% else %}
-    <div class="address-block" style="color:#999;">Same as Bill To address</div>
-    {% endif %}
-  </div>
+        <br>
+        <div class="info-label">DETAILS / MODE</div>
+        <div class="info-line"><span class="field-label">TAX INVOICE NUMBER:</span> {{ invoice_number }}</div>
+        <div class="info-line"><span class="field-label">DATE OF INVOICE:</span> {{ invoice_date }}</div>
+        <div class="info-line"><span class="field-label">MODE OF DELIVERY :</span> {{ mode_of_delivery }}</div>
+        <div class="info-line"><span class="field-label">DISPATCH FROM :</span> {{ dispatch_from }}</div>
+      </td>
+    </tr>
+  </table>
 
-  <!-- Details / Mode -->
-  <div class="details-mode">
-    <h3>Details / Mode</h3>
-    <div class="details-grid">
-      <div><span class="field-label">TAX INVOICE NUMBER:</span> {{ invoice_number }}</div>
-      <div><span class="field-label">DATE OF INVOICE:</span> {{ invoice_date }}</div>
-      <div><span class="field-label">MODE OF DELIVERY:</span> {{ mode_of_delivery }}</div>
-      <div><span class="field-label">DISPATCH FROM:</span> {{ dispatch_from }}</div>
-    </div>
-  </div>
-
-  <!-- Items Table -->
+  <!-- ═══════ C. LINE ITEMS TABLE ═══════ -->
   <table class="items-table">
     <thead>
       <tr>
-        <th style="width:5%">S.NO</th>
-        <th style="width:35%">DESCRIPTION</th>
-        <th style="width:12%">HSN CODE</th>
-        <th style="width:14%">RATE/PC</th>
-        <th style="width:8%">QTY</th>
-        <th style="width:16%">AMOUNT IN INR</th>
+        <th>S.NO</th>
+        <th>DESCRIPTION</th>
+        <th>HSN CODE</th>
+        <th>RATE/PC</th>
+        <th>QTY</th>
+        <th>AMOUNT IN INR</th>
       </tr>
     </thead>
     <tbody>
@@ -367,69 +286,78 @@
       <tr>
         <td>{{ loop.index }}</td>
         <td>{{ item.description }}</td>
-        <td style="text-align:right;">{{ item.hsn_code or '' }}</td>
-        <td style="text-align:right;">{{ "%.2f"|format(item.unit_price) }}</td>
-        <td style="text-align:right;">{{ item.quantity }}</td>
-        <td style="text-align:right;">{{ "%.2f"|format(item.amount) }}</td>
+        <td>{{ item.hsn_code or '' }}</td>
+        <td>{{ format_currency_indian(item.unit_price) }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ format_currency_indian(item.amount) }}</td>
+      </tr>
+      {% endfor %}
+      <!-- Empty padding rows (matches blank template) -->
+      {% for _ in range(3) %}
+      <tr>
+        <td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 
-  <!-- Totals -->
-  <div class="totals-section">
-    <table class="totals-table">
-      <tr>
-        <td>TOTAL BEFORE TAX</td>
-        <td>{{ "%.2f"|format(subtotal) }}</td>
-      </tr>
-      <tr>
-        <td>GST {{ gst_rate }}%</td>
-        <td>{{ "%.2f"|format(gst_amount) }}</td>
-      </tr>
-      <tr class="grand-total">
-        <td>GRAND TOTAL</td>
-        <td>{{ "%.2f"|format(grand_total) }}</td>
-      </tr>
-    </table>
-  </div>
+  <!-- ═══════ TOTALS BLOCK ═══════ -->
+  <table class="totals-table">
+    <tr>
+      <td class="label-cell">TOTAL BEFORE TAX</td>
+      <td class="value-cell">{{ format_currency_indian(subtotal) }}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">GSTIN {{ gst_rate }}%</td>
+      <td class="value-cell">{{ format_currency_indian(gst_amount) }}</td>
+    </tr>
+    <tr>
+      <td class="label-cell">{{ delivery_label or 'FACTORY DELIVERY' }} R/O</td>
+      <td class="value-cell">{{ format_currency_indian(grand_total) }}</td>
+    </tr>
+    <tr class="grand-total">
+      <td class="label-cell">Grand Total</td>
+      <td class="value-cell">{{ format_currency_indian(grand_total) }}</td>
+    </tr>
+  </table>
 
-  <!-- Bank Details -->
-  <div class="bank-section">
-    <div class="bank-left">
-      <h3>Bank Details</h3>
-      <div><span class="field-label">Beneficiary Name:</span> {{ bank_name or 'BARK TECHNOLOGIES' }}</div>
-      <div><span class="field-label">Bank:</span> {{ bank_bank or 'ICICI BANK LTD' }}</div>
-      <div><span class="field-label">Bank Address:</span> {{ bank_address or 'NOIDA 132' }}</div>
-      <div><span class="field-label">A/c No:</span> {{ bank_account_no or '157905003103' }}</div>
-      <div><span class="field-label">IFSC Code:</span> {{ bank_ifsc or 'ICIC0001579' }}</div>
-      <div><span class="field-label">Swift Code:</span> {{ bank_swift or '' }}</div>
-    </div>
-    <div class="bank-right">
-      <h3>For and on Behalf of {{ company_name }}</h3>
-      <div style="margin-top: 10px;">
-        <div><span class="field-label">Address:</span> {{ company_address }}</div>
-        <div><span class="field-label">GST:</span> {{ company_gst }}</div>
-        <div><span class="field-label">Email:</span> {{ company_email }}</div>
-        <div><span class="field-label">Contact No:</span> {{ company_contact }}</div>
-      </div>
-    </div>
-  </div>
+  <!-- ═══════ D. AMOUNT IN WORDS BANNER ═══════ -->
+  <div class="amount-banner">{{ amount_in_words }}</div>
 
-  <!-- Signature -->
-  <div class="signature-section">
-    <div class="signature-left">
-      Thanks &amp; Regards
-    </div>
-    <div class="signature-right">
-      <div class="sig-label">Authorized Signatory</div>
-      <div class="signature-line">Signature / Stamp</div>
-    </div>
-  </div>
+  <!-- ═══════ E. BANK & SIGNATURE BLOCK ═══════ -->
+  <table class="bank-sig-table">
+    <tr>
+      <!-- Left: Bank details -->
+      <td class="bank-cell">
+        <table style="width:100%; border-collapse:collapse; font-size:8.5pt;">
+          <tr><td class="bank-field-label" style="border:1px solid #000; padding:3px 6px; width:35%;">Beneficiary Name</td><td class="bank-field-value" style="border:1px solid #000; padding:3px 6px;">{{ bank_name or 'BARK TECHNOLOGIES' }}</td></tr>
+          <tr><td class="bank-field-label" style="border:1px solid #000; padding:3px 6px;">Beneficiary Address</td><td class="bank-field-value" style="border:1px solid #000; padding:3px 6px;">{{ company_address }}</td></tr>
+          <tr><td class="bank-field-label" style="border:1px solid #000; padding:3px 6px;">GST</td><td class="bank-field-value" style="border:1px solid #000; padding:3px 6px;">{{ company_gst }}</td></tr>
+          <tr><td class="bank-field-label" style="border:1px solid #000; padding:3px 6px;">EMAILID</td><td class="bank-field-value" style="border:1px solid #000; padding:3px 6px;">{{ company_email }}</td></tr>
+          <tr><td class="bank-field-label" style="border:1px solid #000; padding:3px 6px;">Contact No.</td><td class="bank-field-value" style="border:1px solid #000; padding:3px 6px;">{{ company_contact }}</td></tr>
+          <tr><td class="bank-field-label" style="border:1px solid #000; padding:3px 6px;">Beneficiary Bank</td><td class="bank-field-value" style="border:1px solid #000; padding:3px 6px;">{{ bank_bank or 'ICICI BANK LTD' }}</td></tr>
+          <tr><td class="bank-field-label" style="border:1px solid #000; padding:3px 6px;">Bank Address</td><td class="bank-field-value" style="border:1px solid #000; padding:3px 6px;">{{ bank_address or 'NOIDA132' }}</td></tr>
+          <tr><td class="bank-field-label" style="border:1px solid #000; padding:3px 6px;">A/c No:</td><td class="bank-field-value" style="border:1px solid #000; padding:3px 6px;">{{ bank_account_no or '157905003103' }}</td></tr>
+          <tr><td class="bank-field-label" style="border:1px solid #000; padding:3px 6px;">Swift Code:</td><td class="bank-field-value" style="border:1px solid #000; padding:3px 6px;">{{ bank_swift or '' }}</td></tr>
+          <tr><td class="bank-field-label" style="border:1px solid #000; padding:3px 6px;">IFSC Code:-</td><td class="bank-field-value" style="border:1px solid #000; padding:3px 6px;">{{ bank_ifsc or 'ICIC0001579' }}</td></tr>
+        </table>
+      </td>
+      <!-- Right: Signature -->
+      <td class="sig-cell">
+        <div class="sig-text">For an on Behalf of <span style="color:var(--brand-navy);">BARKTECHNOLOGIES</span></div>
+        <div style="margin-top: 20px;">
+          <img src="file://{{ signature_path }}" class="sig-img" alt="Signature">
+        </div>
+        <div style="margin-top: 4px; font-weight:700; font-size:9pt; color:var(--brand-navy);">For.</div>
+        <div class="sig-company">BARK TECHNOLOGIES</div>
+        <div style="margin-top: 8px; font-weight:700; font-size:9pt; color:var(--brand-navy);">Thanks &amp; Regards</div>
+      </td>
+    </tr>
+  </table>
 
-  <!-- Footer -->
+  <!-- ═══════ F. FOOTER ═══════ -->
   <div class="footer-note">
-    Note: This is computer generated tax invoice. If needed original copy please inform to send.
+    Note: This is computer generated tax invoice if needed original copy please inform to send
   </div>
   <div class="page-number">1 of 1</div>
 

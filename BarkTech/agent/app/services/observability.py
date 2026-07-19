@@ -40,21 +40,24 @@ class ObservabilityService:
         cost: float = 0,
         error: str = None,
     ):
-        """Log an agent interaction to MongoDB."""
+        """Log an agent interaction to MongoDB (chatlogs collection for Node.js backend)."""
         try:
             db = self._get_db()
-            await db.agent_traces.insert_one({
+            await db.chatlogs.insert_one({
                 "sessionId": session_id,
                 "source": source,
                 "userMessage": user_message,
-                "assistantReply": assistant_reply[:500],  # Truncate for storage
+                "assistantReply": assistant_reply[:500],
                 "model": model,
+                "inputTokens": tokens_used,
+                "outputTokens": 0,
+                "totalTokens": tokens_used,
+                "cost": cost,
                 "latencyMs": latency_ms,
                 "toolCalls": tool_calls or [],
-                "tokensUsed": tokens_used,
-                "cost": cost,
-                "error": error,
+                "errorMessage": error,
                 "createdAt": datetime.utcnow(),
+                "updatedAt": datetime.utcnow(),
             })
         except Exception as e:
             logger.error(f"Failed to log interaction: {e}")

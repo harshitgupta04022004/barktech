@@ -15,7 +15,8 @@ from weasyprint import HTML
 
 
 TEMPLATE_DIR = Path(__file__).parent.parent / "templates"
-LOGO_PATH = "/home/harshit/Desktop/bark_technology/BarkTech/frontend/public/images/bark-logo.png"
+LOGO_PATH = str(Path(__file__).parent.parent / "templates" / "bark_technologies_logo.png")
+SIGNATURE_PATH = str(Path(__file__).parent.parent / "templates" / "bark_technologies_signature.png")
 
 # Bark Technologies defaults
 COMPANY_DEFAULTS = {
@@ -141,6 +142,7 @@ class InvoicePDFService:
             loader=FileSystemLoader(str(TEMPLATE_DIR)),
             autoescape=False,
         )
+        self.env.globals["range"] = range
 
     def generate_pdf(
         self,
@@ -220,10 +222,13 @@ class InvoicePDFService:
             "invoice_number": invoice_number,
             "invoice_date": invoice_date,
             "logo_path": LOGO_PATH,
+            "signature_path": SIGNATURE_PATH,
+            "format_currency_indian": format_currency_indian,
             "mode_of_delivery": data.get("mode_of_delivery", "BY TRANSPORT"),
             "dispatch_from": data.get("dispatch_from", ""),
             "ship_to_address": data.get("ship_to_address", ""),
             "ref_attended_by": data.get("ref_attended_by", ""),
+            "delivery_label": data.get("delivery_label", "FACTORY DELIVERY"),
         }
 
         # Render HTML
@@ -308,10 +313,13 @@ class InvoicePDFService:
             "invoice_number": invoice_number,
             "invoice_date": invoice_date,
             "logo_path": LOGO_PATH,
+            "signature_path": SIGNATURE_PATH,
+            "format_currency_indian": format_currency_indian,
             "mode_of_delivery": data.get("mode_of_delivery", "BY TRANSPORT"),
             "dispatch_from": data.get("dispatch_from", ""),
             "ship_to_address": data.get("ship_to_address", ""),
             "ref_attended_by": data.get("ref_attended_by", ""),
+            "delivery_label": data.get("delivery_label", "FACTORY DELIVERY"),
         }
 
         template = self.env.get_template("invoice.html")
