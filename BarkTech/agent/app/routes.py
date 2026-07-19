@@ -35,8 +35,16 @@ async def _save_chat_log(
     user_name: str = "",
     model: str = "",
     latency_ms: float = 0,
+    input_tokens: int = 0,
+    output_tokens: int = 0,
+    total_tokens: int = 0,
+    cost: float = 0,
+    tool_calls: list = None,
 ):
-    """Save a chat log entry to MongoDB chat_logs collection."""
+    """Save a chat log entry to MongoDB chat_logs collection.
+
+    Token usage and cost data is captured from OpenRouter API responses.
+    """
     try:
         from motor.motor_asyncio import AsyncIOMotorClient
 
@@ -51,11 +59,11 @@ async def _save_chat_log(
                 "userMessage": user_message,
                 "assistantReply": assistant_reply,
                 "model": model or config.admin_model,
-                "inputTokens": 0,
-                "outputTokens": 0,
-                "totalTokens": 0,
-                "cost": 0,
-                "toolCalls": [],
+                "inputTokens": input_tokens,
+                "outputTokens": output_tokens,
+                "totalTokens": total_tokens,
+                "cost": cost,
+                "toolCalls": tool_calls or [],
                 "latencyMs": latency_ms,
             }
         )
@@ -90,7 +98,7 @@ async def client_chat(body: ChatMessage, user: dict = Depends(authenticate_clien
     """
     thread_id = body.thread_id or f"client-{user.get('user_id', 'anonymous')}"
     start = time.time()
-    result = await run_client_agent(
+    result, usage_data = await run_client_agent(
         body.message,
         thread_id,
         user_context=user,
@@ -105,6 +113,10 @@ async def client_chat(body: ChatMessage, user: dict = Depends(authenticate_clien
         user_name=user.get("name", ""),
         model=config.client_model,
         latency_ms=latency,
+        input_tokens=usage_data.get("input_tokens", 0),
+        output_tokens=usage_data.get("output_tokens", 0),
+        total_tokens=usage_data.get("total_tokens", 0),
+        cost=usage_data.get("cost", 0),
     )
     return ChatResponse(response=result, thread_id=thread_id)
 
@@ -116,7 +128,7 @@ async def client_chat_stream(body: ChatMessage, user: dict = Depends(authenticat
 
     async def event_generator():
         start = time.time()
-        result = await run_client_agent(
+        result, usage_data = await run_client_agent(
             body.message,
             thread_id,
             user_context=user,
@@ -131,6 +143,10 @@ async def client_chat_stream(body: ChatMessage, user: dict = Depends(authenticat
             user_name=user.get("name", ""),
             model=config.client_model,
             latency_ms=latency,
+            input_tokens=usage_data.get("input_tokens", 0),
+            output_tokens=usage_data.get("output_tokens", 0),
+            total_tokens=usage_data.get("total_tokens", 0),
+            cost=usage_data.get("cost", 0),
         )
         yield f"data: {result}\n\n"
         yield "data: [DONE]\n\n"
@@ -148,7 +164,7 @@ async def admin_chat(body: AdminChatMessage, user: dict = Depends(authenticate_a
     """
     thread_id = body.thread_id or f"admin-{user['user_id']}"
     start = time.time()
-    result = await run_admin_agent(
+    result, usage_data = await run_admin_agent(
         body.message,
         thread_id,
         user_context=user,
@@ -163,6 +179,10 @@ async def admin_chat(body: AdminChatMessage, user: dict = Depends(authenticate_a
         user_name=user.get("name", ""),
         model=config.admin_model,
         latency_ms=latency,
+        input_tokens=usage_data.get("input_tokens", 0),
+        output_tokens=usage_data.get("output_tokens", 0),
+        total_tokens=usage_data.get("total_tokens", 0),
+        cost=usage_data.get("cost", 0),
     )
     return ChatResponse(response=result, thread_id=thread_id)
 
@@ -174,7 +194,7 @@ async def admin_chat_stream(body: AdminChatMessage, user: dict = Depends(authent
 
     async def event_generator():
         start = time.time()
-        result = await run_admin_agent(
+        result, usage_data = await run_admin_agent(
             body.message,
             thread_id,
             user_context=user,
@@ -189,6 +209,10 @@ async def admin_chat_stream(body: AdminChatMessage, user: dict = Depends(authent
             user_name=user.get("name", ""),
             model=config.admin_model,
             latency_ms=latency,
+            input_tokens=usage_data.get("input_tokens", 0),
+            output_tokens=usage_data.get("output_tokens", 0),
+            total_tokens=usage_data.get("total_tokens", 0),
+            cost=usage_data.get("cost", 0),
         )
         yield f"data: {result}\n\n"
         yield "data: [DONE]\n\n"

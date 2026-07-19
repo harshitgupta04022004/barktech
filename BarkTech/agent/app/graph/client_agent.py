@@ -88,7 +88,7 @@ async def run_client_agent(
     message: str,
     thread_id: str,
     user_context: dict | None = None,
-) -> str:
+) -> tuple[str, dict]:
     """Run the client-facing agent for a customer message.
 
     Uses LangGraph checkpointer for conversation persistence.
@@ -100,7 +100,8 @@ async def run_client_agent(
         user_context: Verified user payload from JWT (optional for anonymous).
 
     Returns:
-        The agent's response text.
+        Tuple of (response_text, usage_data) where usage_data contains
+        input_tokens, output_tokens, total_tokens, cost from OpenRouter.
     """
     # Refresh model config from backend API (every 5 minutes)
     try:
@@ -128,15 +129,36 @@ async def run_client_agent(
     # Use LangGraph checkpointer for conversation persistence via thread_id
     thread_config = {"configurable": {"thread_id": thread_id}}
 
+    usage_data = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "cost": 0}
+
     try:
         result = await graph.ainvoke(
             {"messages": messages},
             config=thread_config,
         )
-        for msg in reversed(result["messages"]):
+
+        # Extract usage data from all AI messages in the result
+        all_messages = result["messages"]
+        for msg in all_messages:
+            if hasattr(msg, "usage_metadata") and msg.usage_metadata:
+                usage = msg.usage_metadata
+                usage_data["input_tokens"] += usage.get("input_tokens", 0) or 0
+                usage_data["output_tokens"] += usage.get("output_tokens", 0) or 0
+            if hasattr(msg, "response_metadata") and msg.response_metadata:
+                meta = msg.response_metadata
+                if "token_usage" in meta:
+                    token_usage = meta["token_usage"]
+                    usage_data["input_tokens"] += token_usage.get("prompt_tokens", 0) or 0
+                    usage_data["output_tokens"] += token_usage.get("completion_tokens", 0) or 0
+                if "cost" in meta:
+                    usage_data["cost"] += float(meta["cost"]) or 0.0
+
+        usage_data["total_tokens"] = usage_data["input_tokens"] + usage_data["output_tokens"]
+
+        for msg in reversed(all_messages):
             if isinstance(msg, AIMessage) and msg.content:
-                return msg.content
-        return "Sorry, I could not process your request. Please try again."
+                return msg.content, usage_data
+        return "Sorry, I could not process your request. Please try again.", usage_data
     except Exception as e:
         logger.error(f"Client agent error: {e}")
-        return "I'm sorry, I encountered an error. Please try again later."
+        return "I'm sorry, I encountered an error. Please try again later.", usage_data

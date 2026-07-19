@@ -1,82 +1,82 @@
-"""Admin agent — single-agent router pattern with LangGraph checkpointer.
+"""Admin agent — multi-agent collaboration pattern with supervisor routing.
 
 Per architecture spec:
-- Single agent with all admin tools bound (products, leads, invoices, stock, FAQ, contact, calendar)
-- Uses OpenRouter with admin model
-- Uses LangGraph MongoDBSaver checkpointer for conversation persistence
-- User context (JWT scopes) bound via closure for scope-aware tool access
-- Logs all interactions for observability
+- Supervisor routes to specialized agents: product, lead, invoice, analytics, comms, campaign, scheduling
+- Each agent has its own tools bound (native + MCP)
+- Human-in-the-loop for destructive operations
+- Observability: tracks all interactions for debugging
 """
 
+import json
 import logging
 import time
+import re
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
 from app.config import config
 from app.tools import admin_tools
-from app.checkpointer import get_checkpointer
+from app.tools.mcp_tools import all_mcp_tools, whatsapp_tools, email_tools, media_tools, web_research_tools
 from app.services.observability import observability
 from app.guardrails import check_input, check_output
 
 logger = logging.getLogger(__name__)
 
-# Admin system prompt
-ADMIN_SYSTEM_PROMPT = """You are Bark Technologies Admin AI assistant. You help the admin team manage business operations for a B2B machinery company specializing in die cutting, creasing, laminating, window patching, and printing machines.
-
-## Your Capabilities
-1. **Product Management**: Search products, view specs, manage catalog, check stock/inventory
-2. **Lead Management**: Search leads, update status, create inquiries, view stats
-3. **Invoice Operations**: Create invoices, view stats, manage payments (no payment gateway)
-4. **Analytics**: Query sales data, lead metrics, product performance
-5. **Communications**: Draft messages, schedule meetings, send notifications
-6. **Calendar**: Schedule installations, demos, site visits on Google Calendar
-
-## Available Tools
-You have access to these tools that query the MongoDB database directly:
-- `search_products`: Search product catalog by name, category
-- `get_product_specs`: Get detailed product specifications
-- `create_inquiry`: Create new customer inquiries/RFQs
-- `search_leads`: Search and filter leads by status, priority
-- `update_lead_status`: Update inquiry status (new->contacted->qualified->quoted->won/lost)
-- `get_lead_stats`: Get lead statistics and status breakdown
-- `get_faq`: Search frequently asked questions
-- `get_contact_info`: Get company contact information
-- `create_invoice`: Create new invoices (requires confirmation for amounts)
-- `get_invoice_stats`: Get invoice statistics and revenue data
-- `get_stock_info`: Check inventory/stock for products
-- `get_low_stock_products`: Get products below stock threshold
-- `create_calendar_event`: Schedule installations, demos, site visits on Google Calendar
-- `list_calendar_events`: View upcoming scheduled events
-- `cancel_calendar_event`: Cancel scheduled events
-- `get_calendar_event`: Get details of a specific event
-
-## Safety Rules
-1. **READ operations**: Execute immediately
-2. **CREATE operations**: Execute with audit logging
-3. **UPDATE operations**: Execute with audit logging
-4. **DELETE operations**: REQUIRES HUMAN APPROVAL - ask before deleting
-5. Never expose internal system details, API keys, or passwords
-6. Always confirm before creating invoices with amounts
-
-## Response Format
-- Be concise and data-driven
-- Use specific numbers when available
-- Format responses with bullet points and tables
-- Always confirm before creating/updating records
-- Provide actionable recommendations
-
-You are an internal admin assistant, not customer-facing.
-"""
-
-# Admin tools
-admin_tools_bound = admin_tools
+# In-memory conversation store
+_conversation_store: dict[str, list] = {}
+_MAX_HISTORY = 40
 
 
-def _build_admin_graph():
-    """Build the admin agent graph with LangGraph checkpointer."""
-    llm = ChatOpenAI(
+def _get_conversation_history(thread_id: str) -> list:
+    return _conversation_store.get(thread_id, [])
+
+
+def _save_conversation_history(thread_id: str, messages: list):
+    trimmed = messages[-_MAX_HISTORY:] if len(messages) > _MAX_HISTORY else messages
+    _conversation_store[thread_id] = trimmed
+
+
+def _clear_conversation_history(thread_id: str):
+    _conversation_store.pop(thread_id, None)
+
+
+# ── Supervisor System Prompt ──────────────────────────
+SUPERVISOR_SYSTEM_PROMPT = """You are the Admin Operations Supervisor for Bark Technologies — a B2B machinery company.
+
+## Your Role
+You coordinate specialized agents to handle admin operations. You decide which agent should handle each task.
+
+## Available Agents
+- **product**: Product catalog management, specs, media, documents, stock/inventory
+- **lead**: Lead/inquiry management, RFQ processing, status updates
+- **invoice**: Invoice creation, PDF generation, GST, manual paid/partial status
+- **analytics**: Reports, search logs, analytics events, business metrics
+- **comms**: WhatsApp notifications, email sending, customer follow-ups
+- **campaign**: Ad campaigns, social media publishing, creative design
+- **scheduling**: Calendar management, installation demos, site visits
+- **FINISH**: Task is complete and a final answer has been provided
+
+## Decision Rules
+1. If the task is fully handled, respond with FINISH
+2. If the task involves product operations, respond with product
+3. If the task involves leads/inquiries, respond with lead
+4. If the task involves invoicing, respond with invoice
+5. If the task involves analytics/reports, respond with analytics
+6. If the task involves notifications/emails, respond with comms
+7. If the task involves ad campaigns or creative design, respond with campaign
+8. If the task involves scheduling/calendar, respond with scheduling
+
+## Human-in-the-Loop
+For destructive operations (delete, bulk update) or financial operations (create invoice), set awaiting_human_input=true and ask a clear question with choices.
+
+## Output Format
+Respond with ONLY one word: product, lead, invoice, analytics, comms, campaign, scheduling, or FINISH"""
+
+
+def _build_llm():
+    """Build the LLM instance."""
+    return ChatOpenAI(
         model=config.admin_model,
         openai_api_key=config.openrouter_api_key,
         openai_api_base=config.openrouter_base_url,
@@ -85,10 +85,35 @@ def _build_admin_graph():
         request_timeout=60,
     )
 
+
+# ── Supervisor Node ───────────────────────────────────
+def _build_supervisor_node():
+    llm = _build_llm()
+
+    async def supervisor_node(state: MessagesState) -> dict:
+        messages = [SystemMessage(content=SUPERVISOR_SYSTEM_PROMPT)] + state["messages"]
+        response = await llm.ainvoke(messages)
+        decision = response.content.strip().lower()
+
+        valid_agents = {"product", "lead", "invoice", "analytics", "comms", "campaign", "scheduling", "finish"}
+        if decision not in valid_agents:
+            decision = "finish"
+
+        return {"next_agent": decision, "current_agent": "supervisor"}
+
+    return supervisor_node
+
+
+# ── Specialized Agent Builders ─────────────────────────
+def _build_tool_agent(system_prompt: str, tools: list, agent_name: str):
+    """Build a specialized agent node with its own tools."""
+    llm = _build_llm()
+    llm_with_tools = llm.bind_tools(tools)
+
     def agent_node(state: MessagesState):
-        llm_with_tools = llm.bind_tools(admin_tools_bound)
-        response = llm_with_tools.invoke(state["messages"])
-        return {"messages": [response]}
+        messages = [SystemMessage(content=system_prompt)] + state["messages"]
+        response = llm_with_tools.invoke(messages)
+        return {"messages": [response], "current_agent": agent_name}
 
     def should_continue(state: MessagesState):
         last = state["messages"][-1]
@@ -96,17 +121,217 @@ def _build_admin_graph():
             return "tools"
         return END
 
-    tool_node = ToolNode(admin_tools_bound)
+    tool_node = ToolNode(tools)
+
     graph = StateGraph(MessagesState)
     graph.add_node("agent", agent_node)
     graph.add_node("tools", tool_node)
     graph.add_edge(START, "agent")
     graph.add_conditional_edges("agent", should_continue, {"tools": "tools", END: END})
     graph.add_edge("tools", "agent")
+    return graph.compile()
 
-    # Compile with LangGraph checkpointer for conversation persistence
-    checkpointer = get_checkpointer()
-    return graph.compile(checkpointer=checkpointer)
+
+# ── Agent System Prompts ──────────────────────────────
+PRODUCT_PROMPT = """You are the Product Management Agent for Bark Technologies.
+
+## Your Capabilities
+- Search, view, create, update products in the catalog
+- Manage product specs, categories, stock/inventory
+- Upload/manage product media (photos, datasheets)
+
+## Tools Available
+- search_products, get_product_specs: Search and view products
+- get_stock_info, get_low_stock_products: Check inventory
+- presign_media_upload, get_media_public_url: Manage product media via S3/R2
+
+## Rules
+1. READ operations: Execute immediately
+2. CREATE/UPDATE operations: Execute with audit logging
+3. DELETE operations: REQUIRES HUMAN APPROVAL - ask before deleting
+4. Always confirm before bulk updates"""
+
+LEAD_PROMPT = """You are the Lead Management Agent for Bark Technologies.
+
+## Your Capabilities
+- Search and filter leads/inquiries by status, priority
+- Update lead status (new->contacted->qualified->quoted->won/lost)
+- Create new inquiries/RFQs
+- Research RFQs using web search
+
+## Tools Available
+- search_leads, update_lead_status, get_lead_stats: Lead management
+- create_inquiry: Create new inquiries
+- research_url, research_web_search: Research RFQs (read-only web)
+
+## Rules
+1. READ operations: Execute immediately
+2. UPDATE operations: Execute with audit logging
+3. Always log status changes for audit trail"""
+
+INVOICE_PROMPT = """You are the Invoice Management Agent for Bark Technologies.
+
+## Your Capabilities
+- Create invoices with line items, GST, and totals
+- View invoice statistics and revenue data
+- Generate PDF invoices via WeasyPrint
+- Send invoice PDFs via email
+
+## Tools Available
+- create_invoice, get_invoice_stats: Invoice CRUD and stats
+- send_email, send_template_email: Send invoice PDFs via email
+
+## Rules
+1. CREATE invoice: REQUIRES HUMAN CONFIRMATION before creating
+2. Always confirm amounts and GST rates
+3. Invoice PDF is returned as a download URL, never raw bytes
+4. No payment gateway - invoices track paid/partial status manually"""
+
+ANALYTICS_PROMPT = """You are the Analytics Agent for Bark Technologies.
+
+## Your Capabilities
+- Query sales data, lead metrics, product performance
+- Generate business reports and insights
+- Analyze search logs and analytics events
+
+## Tools Available
+- search_leads, get_lead_stats: Lead analytics
+- get_invoice_stats: Revenue analytics
+- get_stock_info, get_low_stock_products: Inventory analytics
+- search_products: Product performance data
+
+## Rules
+1. Provide data-driven insights with specific numbers
+2. Format responses with tables and bullet points
+3. Highlight trends and actionable recommendations"""
+
+COMMS_PROMPT = """You are the Communications Agent for Bark Technologies.
+
+## Your Capabilities
+- Send WhatsApp notifications to admins and customers
+- Send transactional emails (inquiry ack, invoice, quotes)
+- Manage customer follow-ups
+
+## Tools Available
+- send_whatsapp_notification: Send WhatsApp messages
+- send_admin_whatsapp_alert: Alert admins via WhatsApp
+- send_email, send_template_email: Send emails via Resend
+
+## Rules
+1. Always confirm before sending external notifications
+2. Use professional tone for customer-facing messages
+3. Format messages appropriately for each channel"""
+
+CAMPAIGN_PROMPT = """You are the Campaign Agent for Bark Technologies.
+
+## Your Capabilities
+- Manage ad campaigns and social media publishing
+- Generate creative designs for product visuals
+- Manage campaign analytics and performance
+
+## Tools Available
+- presign_media_upload, get_media_public_url: Manage campaign media
+
+## Rules
+1. Always confirm before publishing content
+2. Ensure brand consistency
+3. Track campaign performance metrics"""
+
+SCHEDULING_PROMPT = """You are the Scheduling Agent for Bark Technologies.
+
+## Your Capabilities
+- Schedule installations, demos, and site visits
+- Manage calendar events
+- Check availability and book time slots
+
+## Tools Available
+- create_calendar_event: Create Google Calendar events
+- list_calendar_events: Check availability
+- cancel_calendar_event: Cancel/reschedule events
+- get_calendar_event: View event details
+
+## Rules
+1. Always confirm before creating events
+2. Check for conflicts before booking
+3. Include relevant details (location, attendees, notes)"""
+
+
+# ── Build the Multi-Agent Graph ───────────────────────
+def _build_admin_graph():
+    """Build the admin multi-agent graph with supervisor routing."""
+    supervisor = _build_supervisor_node()
+
+    # Build specialized agents with their tools
+    product_tools = [t for t in admin_tools if t.name in (
+        "search_products", "get_product_specs", "get_stock_info", "get_low_stock_products"
+    )] + media_tools
+
+    lead_tools = [t for t in admin_tools if t.name in (
+        "create_inquiry", "search_leads", "update_lead_status", "get_lead_stats"
+    )] + web_research_tools
+
+    invoice_tools = [t for t in admin_tools if t.name in (
+        "create_invoice", "get_invoice_stats"
+    )] + email_tools
+
+    analytics_tools = [t for t in admin_tools if t.name in (
+        "search_leads", "get_lead_stats", "get_invoice_stats",
+        "get_stock_info", "get_low_stock_products", "search_products"
+    )]
+
+    comms_tools = whatsapp_tools + email_tools
+    campaign_tools = media_tools
+    scheduling_tools = [t for t in admin_tools if t.name in (
+        "create_calendar_event", "list_calendar_events", "cancel_calendar_event", "get_calendar_event"
+    )]
+
+    product_agent = _build_tool_agent(PRODUCT_PROMPT, product_tools, "product")
+    lead_agent = _build_tool_agent(LEAD_PROMPT, lead_tools, "lead")
+    invoice_agent = _build_tool_agent(INVOICE_PROMPT, invoice_tools, "invoice")
+    analytics_agent = _build_tool_agent(ANALYTICS_PROMPT, analytics_tools, "analytics")
+    comms_agent = _build_tool_agent(COMMS_PROMPT, comms_tools, "comms")
+    campaign_agent = _build_tool_agent(CAMPAIGN_PROMPT, campaign_tools, "campaign")
+    scheduling_agent = _build_tool_agent(SCHEDULING_PROMPT, scheduling_tools, "scheduling")
+
+    # Build the main graph
+    graph = StateGraph(MessagesState)
+
+    # Add supervisor node
+    graph.add_node("supervisor", supervisor)
+
+    # Add specialized agent subgraphs
+    graph.add_node("product", product_agent)
+    graph.add_node("lead", lead_agent)
+    graph.add_node("invoice", invoice_agent)
+    graph.add_node("analytics", analytics_agent)
+    graph.add_node("comms", comms_agent)
+    graph.add_node("campaign", campaign_agent)
+    graph.add_node("scheduling", scheduling_agent)
+
+    # Route from START to supervisor
+    graph.add_edge(START, "supervisor")
+
+    # Supervisor routes to agents
+    graph.add_conditional_edges(
+        "supervisor",
+        lambda state: state.get("next_agent", "finish"),
+        {
+            "product": "product",
+            "lead": "lead",
+            "invoice": "invoice",
+            "analytics": "analytics",
+            "comms": "comms",
+            "campaign": "campaign",
+            "scheduling": "scheduling",
+            "finish": END,
+        },
+    )
+
+    # All agents route back to supervisor for next decision or END
+    for agent_name in ["product", "lead", "invoice", "analytics", "comms", "campaign", "scheduling"]:
+        graph.add_edge(agent_name, "supervisor")
+
+    return graph.compile()
 
 
 _admin_graph = None
@@ -119,28 +344,24 @@ def get_admin_graph():
     return _admin_graph
 
 
-def _rebuild_admin_graph():
-    """Rebuild the admin graph with the latest model from config."""
-    global _admin_graph
-    _admin_graph = _build_admin_graph()
-    return _admin_graph
-
-
-async def run_admin_agent(message: str, thread_id: str, user_context: dict | None = None) -> str:
-    """Run the admin agent for an admin chat message.
-
-    Uses LangGraph checkpointer for conversation persistence.
-    User context (JWT-verified) is passed to the agent for scope-aware tool access.
-
-    Args:
-        message: The admin's message.
-        thread_id: Thread ID for conversation continuity (from checkpointer).
-        user_context: Verified user payload from JWT (user_id, email, role, scopes, name).
+async def run_admin_agent(message: str, thread_id: str, user_context: dict | None = None) -> tuple[str, dict]:
+    """Run the admin multi-agent system for an admin chat message.
 
     Returns:
-        The agent's response text.
+        Tuple of (response_text, usage_data) where usage_data contains
+        input_tokens, output_tokens, total_tokens, cost from OpenRouter.
     """
     start_time = time.time()
+
+    # Input guardrails
+    input_check = check_input(message)
+    if input_check["blocked"]:
+        return "Your message was blocked by our safety system. Please try rephrasing.", {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "cost": 0}
+
+    # Handle clear commands
+    if message.strip().lower() in ("/clear", "clear", "reset"):
+        _clear_conversation_history(thread_id)
+        return "Chat cleared. How can I help you?", {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "cost": 0}
 
     # Refresh model config from backend API (every 5 minutes)
     try:
@@ -148,22 +369,14 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
     except Exception:
         pass
 
-    input_check = check_input(message)
-    if input_check["blocked"]:
-        return "Your message was blocked by our safety system. Please try rephrasing."
-
-    if message.strip().lower() in ("/clear", "clear", "reset"):
-        # Clear conversation by creating a new thread_id
-        thread_id = f"admin-{user_context.get('user_id', 'new') if user_context else 'new'}"
-        return "Chat cleared. How can I help you?"
-
     graph = get_admin_graph()
 
-    # Build messages — system prompt + user context + history + new message
-    messages = [SystemMessage(content=ADMIN_SYSTEM_PROMPT)]
+    # Build messages with conversation history
+    messages = []
 
-    # Inject verified user context as system message (from JWT)
-    if user_context:
+    # Add user context as system info (only once per session)
+    history = _get_conversation_history(thread_id)
+    if user_context and not history:
         ctx_parts = []
         if user_context.get("name"):
             ctx_parts.append(f"User: {user_context['name']}")
@@ -171,25 +384,56 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
             ctx_parts.append(f"Role: {user_context['role']}")
         if user_context.get("email"):
             ctx_parts.append(f"Email: {user_context['email']}")
-        if user_context.get("scopes"):
-            ctx_parts.append(f"Scopes: {', '.join(user_context['scopes'])}")
         if ctx_parts:
             messages.append(SystemMessage(content=f"Logged-in admin: {', '.join(ctx_parts)}"))
 
+    # Add conversation history
+    messages.extend(history)
+
+    # Add current user message
     messages.append(HumanMessage(content=message))
 
-    # Use LangGraph checkpointer for conversation persistence via thread_id
-    thread_config = {"configurable": {"thread_id": thread_id}}
+    usage_data = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "cost": 0}
 
     try:
-        result = await graph.ainvoke(
-            {"messages": messages},
-            config=thread_config,
-        )
+        result = await graph.ainvoke({"messages": messages})
 
         all_result_messages = result["messages"]
 
-        # Extract the final AI response
+        # Extract usage data from all AI messages
+        for msg in all_result_messages:
+            if hasattr(msg, "usage_metadata") and msg.usage_metadata:
+                usage = msg.usage_metadata
+                usage_data["input_tokens"] += usage.get("input_tokens", 0) or 0
+                usage_data["output_tokens"] += usage.get("output_tokens", 0) or 0
+            if hasattr(msg, "response_metadata") and msg.response_metadata:
+                meta = msg.response_metadata
+                if "token_usage" in meta:
+                    token_usage = meta["token_usage"]
+                    usage_data["input_tokens"] += token_usage.get("prompt_tokens", 0) or 0
+                    usage_data["output_tokens"] += token_usage.get("completion_tokens", 0) or 0
+                if "cost" in meta:
+                    usage_data["cost"] += float(meta["cost"]) or 0.0
+
+        usage_data["total_tokens"] = usage_data["input_tokens"] + usage_data["output_tokens"]
+
+        # Save the conversation history
+        updated_history = []
+        if user_context and not history:
+            ctx_parts = []
+            if user_context.get("name"):
+                ctx_parts.append(f"User: {user_context['name']}")
+            if user_context.get("role"):
+                ctx_parts.append(f"Role: {user_context['role']}")
+            if user_context.get("email"):
+                ctx_parts.append(f"Email: {user_context['email']}")
+            if ctx_parts:
+                updated_history.append(SystemMessage(content=f"Logged-in admin: {', '.join(ctx_parts)}"))
+
+        updated_history.extend(all_result_messages)
+        _save_conversation_history(thread_id, updated_history)
+
+        # Extract final response
         response_text = ""
         for msg in reversed(all_result_messages):
             if isinstance(msg, AIMessage) and msg.content:
@@ -199,10 +443,12 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
         if not response_text:
             response_text = "Sorry, I could not process your request. Please try again."
 
+        # Output guardrails
         output_check = check_output(response_text)
         if output_check["filtered"] != response_text:
             response_text = output_check["filtered"]
 
+        # Log interaction for observability
         latency = (time.time() - start_time) * 1000
         try:
             await observability.log_interaction(
@@ -212,11 +458,13 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
                 assistant_reply=response_text,
                 model=config.admin_model,
                 latency_ms=latency,
+                tokens_used=usage_data["total_tokens"],
+                cost=usage_data["cost"],
             )
         except Exception as obs_err:
             logger.warning(f"Observability log failed: {obs_err}")
 
-        return response_text
+        return response_text, usage_data
 
     except Exception as e:
         logger.error(f"Admin agent error: {e}", exc_info=True)
@@ -236,12 +484,12 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
 
         error_str = str(e).lower()
         if "timeout" in error_str or "timed out" in error_str:
-            return "The request timed out. The AI model took too long to respond. Please try again with a simpler question."
+            return "The request timed out. The AI model took too long to respond. Please try again with a simpler question.", usage_data
         elif "rate" in error_str and "limit" in error_str:
-            return "Rate limit reached. Please wait a moment and try again."
+            return "Rate limit reached. Please wait a moment and try again.", usage_data
         elif "api" in error_str or "connection" in error_str:
-            return "Unable to connect to the AI model service. Please check that the agent service is running and try again."
+            return "Unable to connect to the AI model service. Please check that the agent service is running and try again.", usage_data
         elif "model" in error_str and ("not found" in error_str or "not available" in error_str):
-            return "The AI model is not available. Please contact the system administrator to check the model configuration."
+            return "The AI model is not available. Please contact the system administrator to check the model configuration.", usage_data
         else:
-            return f"An error occurred while processing your request. Please try again.\n\nError details: {str(e)[:200]}"
+            return f"An error occurred while processing your request. Please try again.\n\nError details: {str(e)[:200]}", usage_data
