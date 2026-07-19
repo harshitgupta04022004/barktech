@@ -1,10 +1,8 @@
-"""Native LangGraph tools - core business operations against MongoDB.
+"""Native LangGraph tools + MCP tools for the multi-agent system.
 
 Per architecture spec:
-- Client tools: products, leads/inquiries, FAQ, contact
-- Admin tools: all client tools + invoices, stock, lead management, calendar
-- All tools query MongoDB directly via Motor (async)
-- Calendar tools use Google Calendar API
+- Native LangGraph @tools for MongoDB core: products, leads, invoices, FAQ, contact, stock
+- MCP tools for external services: WhatsApp, Email, Media, Calendar, Web Research
 """
 
 from app.tools.products import search_products, get_product_specs
@@ -13,6 +11,13 @@ from app.tools.faq import get_faq, get_contact_info
 from app.tools.invoices import create_invoice, get_invoice_stats
 from app.tools.stock import get_stock_info, get_low_stock_products
 from app.mcp.calendar_mcp import create_calendar_event, list_calendar_events, cancel_calendar_event, get_calendar_event
+from app.tools.mcp_tools import (
+    send_whatsapp_notification, send_admin_whatsapp_alert,
+    send_email, send_template_email,
+    presign_media_upload, get_media_public_url,
+    research_url, research_web_search,
+    whatsapp_tools, email_tools, media_tools, web_research_tools, all_mcp_tools,
+)
 
 # Client tools - used by the client-facing agent
 client_tools = [
@@ -23,7 +28,7 @@ client_tools = [
     get_contact_info,
 ]
 
-# Admin tools - used by the admin multi-agent system
+# Admin tools - used by the admin multi-agent system (native MongoDB tools)
 admin_tools = [
     search_products,
     get_product_specs,
@@ -43,7 +48,7 @@ admin_tools = [
     get_calendar_event,
 ]
 
-# Calendar-only tools (for calendar-specific agent or API)
+# Calendar-only tools
 calendar_tools = [
     create_calendar_event,
     list_calendar_events,
@@ -58,5 +63,10 @@ __all__ = [
     "create_invoice", "get_invoice_stats",
     "get_stock_info", "get_low_stock_products",
     "create_calendar_event", "list_calendar_events", "cancel_calendar_event", "get_calendar_event",
+    "send_whatsapp_notification", "send_admin_whatsapp_alert",
+    "send_email", "send_template_email",
+    "presign_media_upload", "get_media_public_url",
+    "research_url", "research_web_search",
     "client_tools", "admin_tools", "calendar_tools",
+    "whatsapp_tools", "email_tools", "media_tools", "web_research_tools", "all_mcp_tools",
 ]

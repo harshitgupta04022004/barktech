@@ -5,6 +5,7 @@ Handles PDF generation, text formatting, and invoice preview.
 import logging
 import os
 import tempfile
+import httpx
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
@@ -15,10 +16,76 @@ from app.services.invoice_pdf import (
     number_to_words,
     format_invoice_date,
 )
+from app.config import config
 
 logger = logging.getLogger(__name__)
 
 invoice_router = APIRouter(prefix="/invoice", tags=["invoice"])
+
+
+async def _llm_format(text: str, context: str) -> str:
+    """Call the LLM to professionally format text for invoice use."""
+    system_prompts = {
+        "address": (
+            "You are a professional document formatter. Rewrite the following address "
+            "into a clean, properly formatted address suitable for a tax invoice. "
+            "Use proper line breaks, capitalize correctly (state abbreviations like UP, "
+            "GUJ in caps, pin codes on their own line), and ensure the address reads "
+            "naturally. Return ONLY the formatted address, nothing else."
+        ),
+        "description": (
+            "You are a professional technical writer for an industrial machinery company. "
+            "Rewrite the following product/service description to be clear, concise, and "
+            "professional for use on a tax invoice. Use proper capitalization, technical "
+            "units in uppercase (HP, KW, MM, KG), and keep it factual. "
+            "Return ONLY the formatted description, nothing else."
+        ),
+        "name": (
+            "You are a professional formatter. Clean up the following name to be properly "
+            "capitalized and professional for use on a tax invoice. "
+            "Return ONLY the formatted name, nothing else."
+        ),
+        "company": (
+            "You are a professional formatter. Clean up the following company name to be "
+            "properly formatted for use on a tax invoice. Add proper suffixes like Pvt. Ltd., "
+            "LLP, etc. if they seem appropriate based on the context. "
+            "Return ONLY the formatted company name, nothing else."
+        ),
+        "general": (
+            "You are a professional document formatter. Clean up the following text to be "
+            "properly formatted for use on a tax invoice. Fix capitalization, spacing, and "
+            "make it professional. Return ONLY the formatted text, nothing else."
+        ),
+    }
+
+    system_msg = system_prompts.get(context, system_prompts["general"])
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{config.openrouter_base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {config.openrouter_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": config.admin_model,
+                    "messages": [
+                        {"role": "system", "content": system_msg},
+                        {"role": "user", "content": text},
+                    ],
+                    "temperature": 0.3,
+                    "max_tokens": 500,
+                },
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                return data["choices"][0]["message"]["content"].strip().strip('"')
+    except Exception as e:
+        logger.warning(f"LLM format failed, falling back to basic formatting: {e}")
+
+    # Fallback: basic title-case formatting
+    return " ".join(text.split()).title()
 
 
 class InvoiceItem(BaseModel):
@@ -104,10 +171,14 @@ async def preview_invoice_html(body: GeneratePDFRequest):
 
 @invoice_router.post("/format-text")
 async def format_invoice_text(body: FormatTextRequest):
-    """AI text formatting agent - rewrites admin-written text into
+    """AI text formatting agent - uses LLM to rewrite admin-written text into
     professional invoice-ready formatting."""
     text = body.text.strip()
 
+    if not text:
+        return FormatTextResponse(original="", formatted="", suggestions=["Empty input"])
+
+    # Amount to words is deterministic, no LLM needed
     if body.context == "amount_words":
         try:
             amount = float(text.replace(",", "").replace("\u20b9", "").replace("Rs.", "").strip())
@@ -120,80 +191,25 @@ async def format_invoice_text(body: FormatTextRequest):
             suggestions=["Amount converted to Indian English words"],
         )
 
-    if body.context == "address":
-        lines = [line.strip() for line in text.replace(";", ",").split(",") if line.strip()]
-        formatted_lines = []
-        for line in lines:
-            words = line.split()
-            result = []
-            for i, word in enumerate(words):
-                if word.upper() in ("UP", "GUJ", "PIN", "INDIA", "GST", "GSTIN", "SF"):
-                    result.append(word.upper())
-                elif i == 0 or not word[0].isupper():
-                    result.append(word.title())
-                else:
-                    result.append(word)
-            formatted_lines.append(" ".join(result))
-        formatted = "\n".join(formatted_lines)
-        return FormatTextResponse(
-            original=text,
-            formatted=formatted,
-            suggestions=["Address formatted with proper casing and line breaks"],
-        )
+    # Map frontend context values to our LLM context keys
+    context_map = {
+        "address": "address",
+        "customerAddress": "address",
+        "shipToAddress": "address",
+        "description": "description",
+        "name": "name",
+        "customerName": "name",
+        "company": "company",
+        "customerCompany": "company",
+        "general": "general",
+    }
+    llm_context = context_map.get(body.context, "general")
+    formatted = await _llm_format(text, llm_context)
 
-    if body.context == "description":
-        lines = [line.strip() for line in text.split("\n") if line.strip()]
-        formatted_lines = []
-        for line in lines:
-            words = line.split()
-            result = []
-            for i, word in enumerate(words):
-                if word.upper() in ("W", "HP", "KW", "RPM", "MM", "CM", "KG", "Ltr", "HPR"):
-                    result.append(word.upper())
-                elif word.isdigit():
-                    result.append(word)
-                elif i == 0:
-                    result.append(word.title())
-                elif word.isupper():
-                    result.append(word)
-                else:
-                    result.append(word.title())
-            formatted_lines.append(" ".join(result))
-        formatted = "\n".join(formatted_lines)
-        return FormatTextResponse(
-            original=text,
-            formatted=formatted,
-            suggestions=["Description formatted with proper capitalization"],
-        )
-
-    if body.context == "general":
-        formatted = " ".join(text.split())
-        formatted = formatted.strip(".")
-        words = formatted.split()
-        result = []
-        for i, word in enumerate(words):
-            if word.upper() in ("UP", "GUJ", "PIN", "INDIA", "GST", "GSTIN", "SF", "PC", "HSN"):
-                result.append(word.upper())
-            elif word.isdigit() or "." in word:
-                result.append(word)
-            elif i == 0:
-                result.append(word.title())
-            elif word.isupper() and len(word) > 1:
-                result.append(word)
-            else:
-                result.append(word.title() if not word[0].isupper() else word)
-        formatted = " ".join(result)
-        return FormatTextResponse(
-            original=text,
-            formatted=formatted,
-            suggestions=["Text formatted with proper capitalization"],
-        )
-
-    formatted = " ".join(text.split())
     return FormatTextResponse(
         original=text,
-        formatted=formatted.title(),
-        suggestions=["Text title-cased"],
+        formatted=formatted,
+        suggestions=[f"Professionally formatted using AI ({llm_context})"],
     )
 
 

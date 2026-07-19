@@ -90,7 +90,7 @@ export function AdminInvoices() {
   }>({
     queryKey: ['admin-invoices'],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('bark_auth_token');
       const res = await fetch('/api/invoices?limit=50', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -103,7 +103,7 @@ export function AdminInvoices() {
   const { data: nextNumData } = useQuery({
     queryKey: ['invoice-next-number'],
     queryFn: async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('bark_auth_token');
       const res = await fetch('/api/invoices/next-number', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -114,29 +114,37 @@ export function AdminInvoices() {
   });
 
   // Create mutation
+  const [createError, setCreateError] = useState('');
   const createMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('bark_auth_token');
       const res = await fetch('/api/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error('Failed to create invoice');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || body.message || `Failed to create invoice (${res.status})`);
+      }
       return res.json();
     },
     onSuccess: () => {
+      setCreateError('');
       queryClient.invalidateQueries({ queryKey: ['admin-invoices'] });
       queryClient.invalidateQueries({ queryKey: ['invoice-next-number'] });
       setShowCreate(false);
       setDraft(defaultDraft);
+    },
+    onError: (err: Error) => {
+      setCreateError(err.message || 'Failed to create invoice. Please check your login and try again.');
     },
   });
 
   // Status mutation
   const statusMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: string }) => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('bark_auth_token');
       const res = await fetch(`/api/invoices/${id}/${action}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -264,7 +272,7 @@ export function AdminInvoices() {
   // Download PDF
   const handleDownloadPdf = async (invoice: Invoice) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('bark_auth_token');
       // Build PDF data from invoice
       const pdfData = {
         invoice_number: invoice.invoiceNumber,
@@ -315,7 +323,7 @@ export function AdminInvoices() {
 
     // Fallback: use backend
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('bark_auth_token');
       const res = await fetch(`/api/invoices/${invoice._id}/pdf`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -1006,13 +1014,18 @@ export function AdminInvoices() {
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
-              <Button variant="outline" onClick={() => setShowCreate(false)}>
+              <Button variant="outline" onClick={() => { setShowCreate(false); setCreateError(''); }}>
                 Cancel
               </Button>
               <Button onClick={handleCreate} disabled={!draft.customerName || createMutation.isPending}>
                 {createMutation.isPending ? 'Creating...' : 'Create Invoice'}
               </Button>
             </div>
+            {createError && (
+              <div className="mt-3 rounded-md bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+                {createError}
+              </div>
+            )}
           </div>
         </div>
       )}

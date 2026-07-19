@@ -1,0 +1,632 @@
+// ================================================================
+// BARK TECHNOLOGIES - PRODUCTION SCHEMA v5
+// Machinery catalog + leads/RFQ + invoicing + CMS + news +
+// Ad campaigns via Claude Ads MCP + creative design via Canva MCP
+// Conventions: UTC DATETIME, DECIMAL for money, soft review workflow
+//
+// Auth model:
+//   - JWT access + refresh tokens with family-based rotation
+//   - RBAC: admin (full access) / client (own data only)
+//   - API scopes for external integrations (Claude Ads MCP, etc.)
+//   - Agent invoice tools use scopes invoices:read / invoices:write
+//     (native LangGraph tools → InvoiceService; PDF on-demand WeasyPrint)
+//
+// Roles:
+//   admin  — full CRUD on every resource, user management, exports,
+//            AI chat with create_invoice + generate_invoice_pdf tools
+//   client — can view own profile, own inquiries, own invoices;
+//            can submit RFQs, download datasheets, chat with AI
+// ================================================================
+
+// 1. AUTH, RBAC & JWT ---------------------------------------------
+
+// -- ROLES --------------------------------------------------------
+
+roles {
+  id          INT           PK
+  name        VARCHAR(50)   UQ  *
+  description VARCHAR(200)  ??
+  is_active   BOOLEAN       *  [default: true]
+  created_at  DATETIME      *  [default: now()]
+}
+
+// -- PERMISSIONS --------------------------------------------------
+// Granular permissions using resource:action naming.
+// 'module' groups permissions for admin UI display.
+// Invoice agent tools require: invoices:read, invoices:write
+// (create_invoice / generate_invoice_pdf / get_invoice_stats).
+
+permissions {
+  id          INT           PK
+  code        VARCHAR(100)  UQ  *
+  module      VARCHAR(50)   *
+  description VARCHAR(200)  ??
+  is_active   BOOLEAN       *  [default: true]
+  created_at  DATETIME      *  [default: now()]
+}
+
+// -- ROLE <-> PERMISSION (M:M) ------------------------------------
+
+role_permissions {
+  role_id       INT      PK  [ref: > roles.id]
+  permission_id INT      PK  [ref: > permissions.id]
+  created_at    DATETIME *   [default: now()]
+}
+
+// -- USERS --------------------------------------------------------
+
+users {
+  id             INT           PK
+  email          VARCHAR(200)  UQ  *
+  phone          VARCHAR(20)   UQ  ??
+  password_hash  VARCHAR(200)  ??
+  full_name      VARCHAR(200)  *
+  role_id        INT           *  [ref: > roles.id]
+  is_active      BOOLEAN       *  [default: true]
+  is_verified    BOOLEAN       *  [default: false]
+  avatar_url     VARCHAR(500)  ??
+  company        VARCHAR(200)  ??
+  google_id      VARCHAR(100)  UQ  ??
+  last_login_at  DATETIME      ??
+  created_at     DATETIME      *  [default: now()]
+  updated_at     DATETIME      *  [default: now()]
+}
+
+// -- USER <-> ROLE (M:M) ------------------------------------------
+// Allows a user to hold multiple roles if needed in future.
+
+user_roles {
+  user_id    INT       PK  [ref: > users.id]
+  role_id    INT       PK  [ref: > roles.id]
+  created_at DATETIME  *   [default: now()]
+}
+
+// -- SESSIONS (browser / mobile) ----------------------------------
+
+user_sessions {
+  id          INT           PK
+  user_id     INT           FK  [ref: > users.id]
+  token_hash  VARCHAR(200)  UQ  *
+  ip_address  VARCHAR(45)   ??
+  user_agent  VARCHAR(500)  ??
+  expires_at  DATETIME      *
+  revoked_at  DATETIME      ??
+  created_at  DATETIME      *  [default: now()]
+}
+
+// -- JWT ACCESS + REFRESH TOKENS ----------------------------------
+// Flow:
+//   1. Login  -> access_token + refresh_token issued, row inserted
+//   2. Access expires -> client uses refresh_token to get new pair
+//   3. On refresh: old row revoked, new row created (same family)
+//   4. If a revoked refresh token is reused -> entire family revoked
+
+jwt_tokens {
+  id              INT           PK
+  user_id         INT           FK  [ref: > users.id]
+  token_hash      VARCHAR(200)  UQ  *
+  token_type      VARCHAR(10)   *  [note: "access|refresh"]
+  token_version   INT           *  [default: 1]
+  token_family    VARCHAR(100)  *
+  ip_address      VARCHAR(45)   ??
+  user_agent      VARCHAR(500)  ??
+  scopes          JSON          ??
+  expires_at      DATETIME      *
+  revoked_at      DATETIME      ??
+  replaced_by     INT           ??  [ref: > jwt_tokens.id]
+  created_at      DATETIME      *  [default: now()]
+}
+
+// -- VERIFICATION TOKENS ------------------------------------------
+
+verification_tokens {
+  id         INT           PK
+  user_id    INT           FK  [ref: > users.id]
+  token_hash VARCHAR(200)  UQ  *
+  type       VARCHAR(30)   *  [note: "email_verify|phone_verify|password_reset|otp"]
+  expires_at DATETIME      *
+  used_at    DATETIME      ??
+  created_at DATETIME      *  [default: now()]
+}
+
+// -- API TOKENS (external integrations) ---------------------------
+
+api_tokens {
+  id              INT           PK
+  name            VARCHAR(100)  *
+  token_hash      VARCHAR(200)  UQ  *
+  user_id         INT           ??  [ref: > users.id]
+  role_id         INT           ??  [ref: > roles.id]
+  ip_whitelist    JSON          ??
+  rate_limit      INT           [default: 1000]
+  expires_at      DATETIME      ??
+  last_used_at    DATETIME      ??
+  revoked_at      DATETIME      ??
+  is_active       BOOLEAN       *  [default: true]
+  created_at      DATETIME      *  [default: now()]
+  updated_at      DATETIME      *  [default: now()]
+}
+
+// -- API TOKEN <-> SCOPE (M:M) ------------------------------------
+
+api_token_scopes {
+  token_id    INT           PK  [ref: > api_tokens.id]
+  scope_code  VARCHAR(100)  PK  [ref: > permissions.code]
+  granted_at  DATETIME      *   [default: now()]
+}
+
+// 2. PRODUCT CATALOG ----------------------------------------------
+
+categories {
+  id         INT           PK
+  name       VARCHAR(200)  *
+  slug       VARCHAR(200)  UQ  *
+  parent_id  INT           ??  [ref: > categories.id]
+  sort_order INT           [default: 0]
+  is_active  BOOLEAN       *  [default: true]
+}
+
+products {
+  id               INT           PK
+  category_id      INT           ??  [ref: > categories.id]
+  name             VARCHAR(300)  *
+  slug             VARCHAR(300)  UQ  *
+  models           VARCHAR(500)  ??
+  summary          TEXT          *
+  description      TEXT          ??
+  lead_time_days   VARCHAR(50)   ??
+  warranty_months  INT           ??
+  published        BOOLEAN       *  [default: false]
+  published_at     DATETIME      ??
+  meta_title       VARCHAR(300)  ??
+  meta_description VARCHAR(500)  ??
+  review_status    VARCHAR(20)   *  [default: "draft", note: "draft|in_review|approved|rejected"]
+  review_notes     TEXT          ??
+  reviewed_by      INT           ??  [ref: > users.id]
+  reviewed_at      DATETIME      ??
+  llm_extracted_data JSON        ??
+  created_by       INT           ??  [ref: > users.id]
+  created_at       DATETIME      *  [default: now()]
+  updated_at       DATETIME      *  [default: now()]
+}
+
+product_specs {
+  id         INT           PK
+  product_id INT           FK  [ref: > products.id]
+  spec_key   VARCHAR(200)  *
+  spec_value TEXT          *
+  unit       VARCHAR(50)   ??
+  sort_order INT           [default: 0]
+}
+
+product_media {
+  id               INT           PK
+  product_id       INT           FK  [ref: > products.id]
+  media_type       VARCHAR(10)   *  [note: "image|video"]
+  provider         VARCHAR(20)   *  [default: "upload", note: "upload|youtube|vimeo"]
+  url              VARCHAR(500)  *
+  thumbnail_url    VARCHAR(500)  ??
+  title            VARCHAR(200)  ??
+  alt_text         VARCHAR(300)  ??
+  duration_seconds INT           ??
+  is_primary       BOOLEAN       [default: false]
+  sort_order       INT           [default: 0]
+  is_active        BOOLEAN       *  [default: true]
+  created_at       DATETIME      *  [default: now()]
+}
+
+product_documents {
+  id              INT           PK
+  product_id      INT           FK  [ref: > products.id]
+  title           VARCHAR(300)  ??
+  file_url        VARCHAR(500)  *
+  doc_type        VARCHAR(50)   [default: "datasheet", note: "datasheet|manual|brochure|certificate"]
+  file_size_bytes INT           ??
+  language        VARCHAR(10)   [default: "en"]
+  sort_order      INT           [default: 0]
+  download_count  INT           *  [default: 0]
+}
+
+related_products {
+  product_id INT  PK  [ref: > products.id]
+  related_id INT  PK  [ref: > products.id]
+}
+
+site_settings {
+  key   VARCHAR(100)  PK
+  value TEXT          ??
+}
+
+// 3. LEADS / RFQ ---------------------------------------------------
+
+inquiries {
+  id           INT           PK
+  name         VARCHAR(200)  *
+  email        VARCHAR(200)  *
+  phone        VARCHAR(50)   ??
+  company      VARCHAR(200)  ??
+  city         VARCHAR(100)  ??
+  product_id   INT           ??  [ref: > products.id]
+  message      TEXT          ??
+  source       VARCHAR(20)   *  [default: "web_form", note: "web_form|rfq|ai_chat|whatsapp|phone|email|ad_campaign"]
+  status       VARCHAR(20)   [default: "new", note: "new|contacted|quoted|won|lost|spam"]
+  priority     VARCHAR(20)   [default: "normal", note: "low|normal|high|urgent"]
+  subject      VARCHAR(300)  ??
+  quantity     INT           ??
+  utm_source   VARCHAR(100)  ??
+  utm_medium   VARCHAR(100)  ??
+  utm_campaign VARCHAR(200)  ??
+  assigned_to  INT           ??  [ref: > users.id]
+  extra_data   JSON          ??
+  created_at   DATETIME      *  [default: now()]
+  updated_at   DATETIME      *  [default: now()]
+}
+
+rfq_items {
+  id           INT           PK
+  inquiry_id   INT           FK  [ref: > inquiries.id]
+  product_id   INT           ??  [ref: > products.id]
+  product_name VARCHAR(300)  ??
+  quantity     INT           *
+  notes        TEXT          ??
+  created_at   DATETIME      *  [default: now()]
+}
+
+// 4. INVOICES ------------------------------------------------------
+// PDF generation: on-demand via Python InvoiceService.generate_pdf
+// (WeasyPrint + Jinja2). No PDF blob column required.
+// Agent path: native LangGraph tools create_invoice + generate_invoice_pdf
+// return a download URL — not Invoice MCP. Optional pdf_url caches last render.
+
+invoices {
+  id               INT           PK
+  invoice_number   VARCHAR(50)   UQ  *
+  inquiry_id       INT           ??  [ref: > inquiries.id]
+  customer_name    VARCHAR(200)  *
+  customer_email   VARCHAR(200)  ??
+  customer_phone   VARCHAR(50)   ??
+  customer_company VARCHAR(200)  ??
+  customer_address TEXT          ??
+  customer_gst     VARCHAR(20)   ??
+  ship_to_address  TEXT          ??
+  mode_of_delivery VARCHAR(100)  ??
+  dispatch_from    VARCHAR(100)  ??
+  transport_details VARCHAR(200) ??
+  delivery_basis   VARCHAR(200)  ??  [note: "e.g. TRANSPORT TO PAY BASIS R/O"]
+  ref_attended_by  VARCHAR(200)  ??
+  currency         CHAR(3)       *  [default: "INR"]
+  subtotal         DECIMAL(12,2) *  [default: 0]
+  gst_amount       DECIMAL(12,2) *  [default: 0]
+  total            DECIMAL(12,2) *  [default: 0]
+  amount_in_words  VARCHAR(500)  ??
+  bank_name        VARCHAR(200)  ??
+  bank_address     VARCHAR(300)  ??
+  bank_account_no  VARCHAR(100)  ??
+  bank_ifsc_code   VARCHAR(50)   ??
+  bank_swift_code  VARCHAR(50)   ??
+  status           VARCHAR(20)   [default: "draft", note: "draft|sent|paid|partially_paid|overdue|cancelled"]
+  notes            TEXT          ??
+  terms            TEXT          ??
+  due_date         DATETIME      ??
+  paid_at          DATETIME      ??
+  pdf_url          VARCHAR(500)  ??  [note: "optional cached S3/R2 or app path after generate_invoice_pdf"]
+  pdf_generated_at DATETIME      ??
+  created_by       INT           ??  [ref: > users.id]
+  created_at       DATETIME      *  [default: now()]
+  updated_at       DATETIME      *  [default: now()]
+}
+
+invoice_items {
+  id          INT           PK
+  invoice_id  INT           FK  [ref: > invoices.id]
+  product_id  INT           ??  [ref: > products.id]
+  description VARCHAR(500)  *
+  hsn_code    VARCHAR(20)   ??
+  quantity    DECIMAL(10,2) *  [default: 1]
+  unit_price  DECIMAL(12,2) *  [default: 0]
+  gst_rate    DECIMAL(5,2)  *  [default: 0]
+  amount      DECIMAL(12,2) *  [default: 0]
+  sort_order  INT           [default: 0]
+}
+
+invoice_sequences {
+  year        INT  PK
+  last_number INT  [default: 0]
+}
+
+// 5. STOCK / INVENTORY ----------------------------------------------
+
+product_stocks {
+  id              INT           PK
+  product_id      INT           UQ  FK  [ref: > products.id]
+  quantity        INT           *  [default: 0]
+  unit            VARCHAR(20)   [default: "units"]
+  min_stock       INT           [default: 5]
+  max_stock       INT           [default: 1000]
+  location        VARCHAR(200)  ??
+  notes           TEXT          ??
+  last_updated_by INT           ??  [ref: > users.id]
+  updated_at      DATETIME      *  [default: now()]
+  created_at      DATETIME      *  [default: now()]
+}
+
+stock_logs {
+  id              INT           PK
+  stock_id        INT           FK  [ref: > product_stocks.id]
+  action          VARCHAR(20)   *  [note: "add|remove|adjust|reserve|release"]
+  quantity_change INT           *
+  reason          VARCHAR(300)  ??
+  performed_by    INT           ??  [ref: > users.id]
+  created_at      DATETIME      *  [default: now()]
+}
+
+// 6. CMS / CONTENT ------------------------------------------------
+
+case_studies {
+  id           INT           PK
+  title        VARCHAR(300)  *
+  slug         VARCHAR(300)  UQ  *
+  client_name  VARCHAR(200)  ??
+  location     VARCHAR(200)  ??
+  industry     VARCHAR(100)  ??
+  summary      TEXT          ??
+  content      TEXT          ??
+  image_url    VARCHAR(500)  ??
+  published    BOOLEAN       *  [default: false]
+  published_at DATETIME      ??
+  created_at   DATETIME      *  [default: now()]
+  updated_at   DATETIME      *  [default: now()]
+}
+
+case_study_products {
+  case_study_id INT  PK  [ref: > case_studies.id]
+  product_id    INT  PK  [ref: > products.id]
+}
+
+news_articles {
+  id               INT           PK
+  title            VARCHAR(300)  *
+  slug             VARCHAR(300)  UQ  *
+  news_type        VARCHAR(30)   *  [default: "company", note: "company|press_release|industry|event|award"]
+  excerpt          TEXT          ??
+  content          TEXT          ??
+  cover_image_url  VARCHAR(500)  ??
+  source_url       VARCHAR(500)  ??
+  author_id        INT           ??  [ref: > users.id]
+  tags             VARCHAR(500)  ??
+  published        BOOLEAN       *  [default: false]
+  published_at     DATETIME      ??
+  meta_title       VARCHAR(300)  ??
+  meta_description VARCHAR(500)  ??
+  created_at       DATETIME      *  [default: now()]
+  updated_at       DATETIME      *  [default: now()]
+}
+
+news_article_products {
+  news_article_id INT  PK  [ref: > news_articles.id]
+  product_id      INT  PK  [ref: > products.id]
+}
+
+blog_posts {
+  id               INT           PK
+  title            VARCHAR(300)  *
+  slug             VARCHAR(300)  UQ  *
+  excerpt          TEXT          ??
+  content          TEXT          ??
+  author_id        INT           ??  [ref: > users.id]
+  image_url        VARCHAR(500)  ??
+  tags             VARCHAR(500)  ??
+  review_status    VARCHAR(20)   *  [default: "draft", note: "draft|in_review|approved|rejected"]
+  review_notes     TEXT          ??
+  reviewed_by      INT           ??  [ref: > users.id]
+  reviewed_at      DATETIME      ??
+  published        BOOLEAN       *  [default: false]
+  published_at     DATETIME      ??
+  meta_title       VARCHAR(300)  ??
+  meta_description VARCHAR(500)  ??
+  created_at       DATETIME      *  [default: now()]
+  updated_at       DATETIME      *  [default: now()]
+}
+
+faqs {
+  id          INT           PK
+  category_id INT           ??  [ref: > categories.id]
+  product_id  INT           ??  [ref: > products.id]
+  question    VARCHAR(500)  *
+  answer      TEXT          *
+  sort_order  INT           [default: 0]
+  is_active   BOOLEAN       *  [default: true]
+  created_at  DATETIME      *  [default: now()]
+}
+
+offices {
+  id         INT            PK
+  name       VARCHAR(200)   *
+  city       VARCHAR(100)   *
+  state      VARCHAR(100)   ??
+  country    VARCHAR(50)    [default: "India"]
+  address    TEXT           ??
+  phone      VARCHAR(50)    ??
+  email      VARCHAR(255)   ??
+  latitude   NUMERIC(10,7)  ??
+  longitude  NUMERIC(10,7)  ??
+  is_active  BOOLEAN        *  [default: true]
+  sort_order INT            [default: 0]
+  created_at DATETIME       *  [default: now()]
+}
+
+pages {
+  id               INT           PK
+  slug             VARCHAR(200)  UQ  *
+  title            VARCHAR(300)  *
+  content          TEXT          ??
+  meta_title       VARCHAR(300)  ??
+  meta_description VARCHAR(500)  ??
+  published        BOOLEAN       *  [default: false]
+  created_at       DATETIME      *  [default: now()]
+  updated_at       DATETIME      *  [default: now()]
+}
+
+// 7. INSTALLATION SHOWCASE ----------------------------------------
+
+product_installations {
+  id              INT           PK
+  title           VARCHAR(200)  *
+  description     TEXT          ??
+  location        VARCHAR(200)  ??
+  client_name     VARCHAR(200)  ??
+  installed_on    DATETIME      ??
+  cover_image_url VARCHAR(500)  ??
+  video_url       VARCHAR(500)  ??
+  thumbnail_url   VARCHAR(500)  ??
+  video_type      VARCHAR(20)   [default: "youtube", note: "youtube|vimeo|upload"]
+  product_id      INT           ??  [ref: > products.id]
+  sort_order      INT           *  [default: 0]
+  is_active       BOOLEAN       *  [default: true]
+  created_at      DATETIME      *  [default: now()]
+  updated_at      DATETIME      *  [default: now()]
+}
+
+installation_media {
+  id              INT           PK
+  installation_id INT           FK  [ref: > product_installations.id]
+  media_type      VARCHAR(10)   *  [note: "image|video"]
+  url             VARCHAR(500)  *
+  caption         VARCHAR(300)  ??
+  sort_order      INT           [default: 0]
+}
+
+// 8. AD CAMPAIGNS (Claude Ads MCP) --------------------------------
+//
+// Social media publishing, ad campaign management, metrics tracking,
+// and promotions are handled externally via Claude Ads MCP.
+// Creative assets are designed via Canva MCP.
+//
+// content_posts = INTERNAL content planning layer (what to say).
+// Actual publishing, metrics, and promotions live inside Claude Ads.
+
+content_posts {
+  id              INT           PK
+  post_type       VARCHAR(30)   *  [default: "general", note: "new_product|new_machine|installation_complete|news|case_study|blog|general"]
+  title           VARCHAR(300)  ??
+  content_text    TEXT          *
+  link_url        VARCHAR(500)  ??
+  hashtags        VARCHAR(500)  ??
+  product_id      INT           ??  [ref: > products.id]
+  installation_id INT           ??  [ref: > product_installations.id]
+  news_article_id INT           ??  [ref: > news_articles.id]
+  case_study_id   INT           ??  [ref: > case_studies.id]
+  blog_post_id    INT           ??  [ref: > blog_posts.id]
+  review_status   VARCHAR(20)   *  [default: "draft", note: "draft|in_review|approved|rejected"]
+  review_notes    TEXT          ??
+  reviewed_by     INT           ??  [ref: > users.id]
+  reviewed_at     DATETIME      ??
+  created_by      INT           ??  [ref: > users.id]
+  created_at      DATETIME      *  [default: now()]
+  updated_at      DATETIME      *  [default: now()]
+}
+
+// 9. ANALYTICS & SEARCH -------------------------------------------
+
+analytics_events {
+  id             INT           PK
+  event_type     VARCHAR(50)   *
+  event_category VARCHAR(50)   ??
+  event_action   VARCHAR(100)  ??
+  event_label    VARCHAR(300)  ??
+  event_value    INT           ??
+  page_url       VARCHAR(500)  ??
+  referrer       VARCHAR(500)  ??
+  user_agent     VARCHAR(500)  ??
+  ip_address     VARCHAR(45)   ??
+  session_id     VARCHAR(100)  ??
+  user_id        VARCHAR(100)  ??
+  extra_data     TEXT          ??
+  created_at     DATETIME      *  [default: now()]
+}
+
+search_logs {
+  id            INT           PK
+  query         VARCHAR(200)  *
+  results_count INT           [default: 0]
+  source        VARCHAR(20)   [default: "header", note: "header|product_list|search_page"]
+  ip_hash       VARCHAR(64)   ??
+  created_at    DATETIME      *  [default: now()]
+}
+
+// 10. EMAIL AUTOMATION --------------------------------------------
+
+email_subscribers {
+  id              INT           PK
+  email           VARCHAR(200)  UQ  *
+  name            VARCHAR(200)  ??
+  source          VARCHAR(50)   *  [default: "newsletter"]
+  status          VARCHAR(20)   *  [default: "active", note: "active|unsubscribed|bounced"]
+  double_opt_in   DATETIME      ??
+  unsubscribed_at DATETIME      ??
+  created_at      DATETIME      *  [default: now()]
+}
+
+email_sequences {
+  id           INT           PK
+  name         VARCHAR(100)  *
+  trigger_type VARCHAR(50)   *  [note: "rfq_submit|datasheet_download|newsletter_signup"]
+  is_active    BOOLEAN       *  [default: true]
+  created_at   DATETIME      *  [default: now()]
+}
+
+email_sequence_logs {
+  id               INT           PK
+  subscriber_id    INT           FK  [ref: > email_subscribers.id]
+  subscriber_email VARCHAR(200)  *
+  sequence_id      INT           ??  [ref: > email_sequences.id]
+  template_name    VARCHAR(100)  *
+  status           VARCHAR(20)   *  [default: "pending", note: "pending|sent|failed"]
+  error_message    TEXT          ??
+  scheduled_at     DATETIME      *
+  sent_at          DATETIME      ??
+  created_at       DATETIME      *  [default: now()]
+}
+
+// 11. CHAT / AI OBSERVABILITY -------------------------------------
+
+chat_turn_logs {
+  id                     INT          PK
+  session_id             VARCHAR(64)  *
+  user_message           TEXT         *
+  assistant_reply        TEXT         *
+  language               VARCHAR(10)  [default: "en"]
+  intent                 VARCHAR(50)  ??
+  latency_ms             FLOAT        ??
+  token_count_prompt     INT          ??
+  token_count_completion INT          ??
+  tool_calls_summary     TEXT         ??
+  matched_product_ids    TEXT         ??
+  created_at             DATETIME     *  [default: now()]
+}
+
+tool_call_logs {
+  id          INT           PK
+  session_id  VARCHAR(64)   *
+  turn_id     INT           ??  [ref: > chat_turn_logs.id]
+  tool_name   VARCHAR(100)  *   [note: "e.g. create_invoice, generate_invoice_pdf, search_products"]
+  tool_input  TEXT          ??
+  tool_output TEXT          ??  [note: "for generate_invoice_pdf store download_url + filename, not PDF bytes"]
+  latency_ms  FLOAT         ??
+  success     BOOLEAN       [default: true]
+  created_at  DATETIME      *  [default: now()]
+}
+
+// 12. AUDIT -------------------------------------------------------
+
+audit_logs {
+  id            INT           PK
+  user_id       INT           ??  [ref: > users.id]
+  action        VARCHAR(50)   *  [note: "create|update|delete|login|export|publish"]
+  resource_type VARCHAR(50)   ??  [note: "product|inquiry|user|invoice|content_post|news_article"]
+  resource_id   INT           ??
+  details       JSON          ??
+  ip_address    VARCHAR(45)   ??
+  user_agent    VARCHAR(500)  ??
+  created_at    DATETIME      *  [default: now()]
+}

@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { invoiceService } from '../services/invoice.service.js';
-import { z } from 'z';
+import { z } from 'zod';
 
 const invoiceItemSchema = z.object({
   description: z.string().min(1),
@@ -123,7 +123,7 @@ export class InvoiceController {
         const buffer = await response.arrayBuffer();
         return reply
           .header('Content-Type', 'application/pdf')
-          .header('Content-Disposition', `attachment; filename="${result.filename}"')
+          .header('Content-Disposition', `attachment; filename="${result.filename}"`)
           .send(Buffer.from(buffer));
       }
     } catch (err) {

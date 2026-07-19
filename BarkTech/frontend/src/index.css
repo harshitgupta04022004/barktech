@@ -1,0 +1,114 @@
+@import "tailwindcss";
+
+@theme {
+  /* Light mode */
+  --color-background: #ffffff;
+  --color-foreground: #000000;
+  --color-card: #ffffff;
+  --color-card-foreground: #000000;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #000000;
+  --color-primary: #e65100;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f5f5f5;
+  --color-secondary-foreground: #111111;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #555555;
+  --color-accent: #f5f5f5;
+  --color-accent-foreground: #111111;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #d4d4d4;
+  --color-input: #d4d4d4;
+  --color-ring: #e65100;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+  --radius-lg: 0.5rem;
+  --radius-md: 0.375rem;
+  --radius-sm: 0.25rem;
+}
+
+/* Dark mode overrides */
+.dark {
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-card: #111111;
+  --color-card-foreground: #ffffff;
+  --color-popover: #111111;
+  --color-popover-foreground: #ffffff;
+  --color-primary: #ff6d00;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #1a1a1a;
+  --color-secondary-foreground: #e5e5e5;
+  --color-muted: #1a1a1a;
+  --color-muted-foreground: #b0b0b0;
+  --color-accent: #1a1a1a;
+  --color-accent-foreground: #e5e5e5;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #333333;
+  --color-input: #333333;
+  --color-ring: #ff6d00;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Force high contrast on all text elements */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure all headings use foreground color for maximum contrast */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-foreground);
+}
+
+/* Prose styles for markdown in dark mode */
+.dark .prose {
+  --tw-prose-body: #d1d5db;
+  --tw-prose-headings: #ffffff;
+  --tw-prose-lead: #9ca3af;
+  --tw-prose-links: #fb923c;
+  --tw-prose-bold: #ffffff;
+  --tw-prose-counters: #9ca3af;
+  --tw-prose-bullets: #6b7280;
+  --tw-prose-hr: #374151;
+  --tw-prose-quotes: #f3f4f6;
+  --tw-prose-quote-borders: #e65100;
+  --tw-prose-captions: #9ca3af;
+  --tw-prose-code: #f3f4f6;
+  --tw-prose-pre-code: #d1d5db;
+  --tw-prose-pre-bg: #111827;
+  --tw-prose-th-borders: #4b5563;
+  --tw-prose-td-borders: #374151;
+}
+
+/* Light mode prose */
+.prose {
+  --tw-prose-body: #374151;
+  --tw-prose-headings: #000000;
+  --tw-prose-links: #e65100;
+  --tw-prose-bold: #000000;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #a3a3a3;
+  border-radius: 3px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #525252;
+}

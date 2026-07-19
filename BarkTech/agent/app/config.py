@@ -26,11 +26,6 @@ class AgentConfig:
     mongodb_uri: str = field(default_factory=lambda: os.getenv("MONGODB_URI", "mongodb://localhost:27017"))
     mongodb_db: str = field(default_factory=lambda: os.getenv("MONGODB_DB_NAME", "BarkTech"))
 
-    # LangSmith
-    langsmith_api_key: str = field(default_factory=lambda: os.getenv("LANGSMITH_API_KEY", ""))
-    langsmith_project: str = field(default_factory=lambda: os.getenv("LANGSMITH_PROJECT", "bark-agents"))
-    langsmith_tracing: bool = field(default_factory=lambda: os.getenv("LANGSMITH_TRACING", "false") == "true")
-
     # Google Calendar
     google_calendar_api_key: str = field(default_factory=lambda: os.getenv("GOOGLE_CALENDAR_API_KEY", ""))
     google_calendar_id: str = field(default_factory=lambda: os.getenv("GOOGLE_CALENDAR_ID", "primary"))

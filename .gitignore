@@ -1,0 +1,39 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Build
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+
+# Cursor
+.cursor/
+
+# Secrets / OAuth credentials
+*client_secret*
+*client_secret_*.json
+*googleusercontent*.json

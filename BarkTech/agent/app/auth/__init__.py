@@ -5,6 +5,6 @@ Supports both Google OAuth and email/password login tokens.
 """
 
 from app.auth.jwt_handler import JWTHandler, ScopeChecker
-from app.auth.middleware import AgentAuthMiddleware
+from app.auth.middleware import authenticate_client, authenticate_admin, require_scope
 
-__all__ = ["JWTHandler", "ScopeChecker", "AgentAuthMiddleware"]
+__all__ = ["JWTHandler", "ScopeChecker", "authenticate_client", "authenticate_admin", "require_scope"]
