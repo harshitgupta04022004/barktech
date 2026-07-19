@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.config import config
 from app.routes import router, admin_router
+from app.routes_invoice import invoice_router
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,7 @@ app.add_middleware(
 # ── Routes ───────────────────────────────────────────
 app.include_router(router)
 app.include_router(admin_router)
+app.include_router(invoice_router)
 
 
 @app.get("/health")
