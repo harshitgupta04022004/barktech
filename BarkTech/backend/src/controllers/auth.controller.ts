@@ -36,6 +36,14 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8),
 });
 
+/** Generate JWT scopes based on user role (matches Python ScopeChecker) */
+function scopesForRole(role: string): string[] {
+  if (role === 'super_admin' || role === 'admin') {
+    return ['admin:*'];
+  }
+  return ['chat:read', 'chat:write', 'product:read', 'contact:read', 'faq:read', 'lead:create'];
+}
+
 export class AuthController {
   async register(request: FastifyRequest, reply: FastifyReply) {
     const body = registerSchema.parse(request.body);
@@ -45,6 +53,7 @@ export class AuthController {
       sub: user._id,
       email: user.email,
       role: user.role,
+      scopes: scopesForRole(user.role),
     });
 
     return reply.status(201).send({ success: true, data: { user, token } });
@@ -58,6 +67,7 @@ export class AuthController {
       sub: user._id,
       email: user.email,
       role: user.role,
+      scopes: scopesForRole(user.role),
     });
 
     return reply.send({ success: true, data: { user, token } });
@@ -121,6 +131,7 @@ export class AuthController {
         sub: user._id,
         email: user.email,
         role: user.role,
+        scopes: scopesForRole(user.role),
       });
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -149,6 +160,7 @@ export class AuthController {
       sub: user._id,
       email: user.email,
       role: user.role,
+      scopes: scopesForRole(user.role),
     });
 
     return reply.send({ success: true, data: { user, token } });

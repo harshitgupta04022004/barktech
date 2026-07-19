@@ -16,6 +16,7 @@ pydantic>=2.10.0
 # ── AI / Agent ──────────────────────────────────────
 langgraph>=0.2.0
 langgraph-checkpoint>=2.0.0
+langgraph-checkpoint-mongodb>=0.1.0
 langchain-core>=0.3.0
 langchain-openai>=0.2.0
 langchain-community>=0.3.0
@@ -29,6 +30,7 @@ mcp>=1.0.0
 
 # ── Auth / JWT ─────────────────────────────────────
 PyJWT>=2.9.0
+python-jose[cryptography]>=3.3.0
 
 # ── Media / Storage ────────────────────────────────
 boto3>=1.35.0

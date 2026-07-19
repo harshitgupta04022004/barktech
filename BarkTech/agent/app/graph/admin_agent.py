@@ -1,9 +1,10 @@
-"""Admin agent — single-agent router pattern with all admin tools.
+"""Admin agent — single-agent router pattern with LangGraph checkpointer.
 
 Per architecture spec:
-- Single agent with all admin tools bound (products, leads, invoices, stock, FAQ, contact)
+- Single agent with all admin tools bound (products, leads, invoices, stock, FAQ, contact, calendar)
 - Uses OpenRouter with admin model
-- Supports conversation history within session
+- Uses LangGraph MongoDBSaver checkpointer for conversation persistence
+- User context (JWT scopes) bound via closure for scope-aware tool access
 - Logs all interactions for observability
 """
 
@@ -15,30 +16,11 @@ from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
 from app.config import config
 from app.tools import admin_tools
+from app.checkpointer import get_checkpointer
 from app.services.observability import observability
 from app.guardrails import check_input, check_output
 
 logger = logging.getLogger(__name__)
-
-# In-memory conversation store (thread_id -> messages list)
-# Since we don't have a LangGraph checkpointer configured, we maintain
-# conversation history in-memory keyed by thread_id.
-_conversation_store: dict[str, list] = {}
-_MAX_HISTORY = 40
-
-
-def _get_conversation_history(thread_id: str) -> list:
-    return _conversation_store.get(thread_id, [])
-
-
-def _save_conversation_history(thread_id: str, messages: list):
-    trimmed = messages[-_MAX_HISTORY:] if len(messages) > _MAX_HISTORY else messages
-    _conversation_store[thread_id] = trimmed
-
-
-def _clear_conversation_history(thread_id: str):
-    _conversation_store.pop(thread_id, None)
-
 
 # Admin system prompt
 ADMIN_SYSTEM_PROMPT = """You are Bark Technologies Admin AI assistant. You help the admin team manage business operations for a B2B machinery company specializing in die cutting, creasing, laminating, window patching, and printing machines.
@@ -49,6 +31,7 @@ ADMIN_SYSTEM_PROMPT = """You are Bark Technologies Admin AI assistant. You help 
 3. **Invoice Operations**: Create invoices, view stats, manage payments (no payment gateway)
 4. **Analytics**: Query sales data, lead metrics, product performance
 5. **Communications**: Draft messages, schedule meetings, send notifications
+6. **Calendar**: Schedule installations, demos, site visits on Google Calendar
 
 ## Available Tools
 You have access to these tools that query the MongoDB database directly:
@@ -92,7 +75,7 @@ admin_tools_bound = admin_tools
 
 
 def _build_admin_graph():
-    """Build the admin agent graph - single agent with all admin tools."""
+    """Build the admin agent graph with LangGraph checkpointer."""
     llm = ChatOpenAI(
         model=config.admin_model,
         openai_api_key=config.openrouter_api_key,
@@ -120,17 +103,13 @@ def _build_admin_graph():
     graph.add_edge(START, "agent")
     graph.add_conditional_edges("agent", should_continue, {"tools": "tools", END: END})
     graph.add_edge("tools", "agent")
-    return graph.compile()
+
+    # Compile with LangGraph checkpointer for conversation persistence
+    checkpointer = get_checkpointer()
+    return graph.compile(checkpointer=checkpointer)
 
 
 _admin_graph = None
-
-
-def _rebuild_admin_graph():
-    """Rebuild the admin graph with the latest model from config."""
-    global _admin_graph
-    _admin_graph = _build_admin_graph()
-    return _admin_graph
 
 
 def get_admin_graph():
@@ -140,8 +119,27 @@ def get_admin_graph():
     return _admin_graph
 
 
+def _rebuild_admin_graph():
+    """Rebuild the admin graph with the latest model from config."""
+    global _admin_graph
+    _admin_graph = _build_admin_graph()
+    return _admin_graph
+
+
 async def run_admin_agent(message: str, thread_id: str, user_context: dict | None = None) -> str:
-    """Run the admin agent for an admin chat message."""
+    """Run the admin agent for an admin chat message.
+
+    Uses LangGraph checkpointer for conversation persistence.
+    User context (JWT-verified) is passed to the agent for scope-aware tool access.
+
+    Args:
+        message: The admin's message.
+        thread_id: Thread ID for conversation continuity (from checkpointer).
+        user_context: Verified user payload from JWT (user_id, email, role, scopes, name).
+
+    Returns:
+        The agent's response text.
+    """
     start_time = time.time()
 
     # Refresh model config from backend API (every 5 minutes)
@@ -155,15 +153,17 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
         return "Your message was blocked by our safety system. Please try rephrasing."
 
     if message.strip().lower() in ("/clear", "clear", "reset"):
-        _clear_conversation_history(thread_id)
+        # Clear conversation by creating a new thread_id
+        thread_id = f"admin-{user_context.get('user_id', 'new') if user_context else 'new'}"
         return "Chat cleared. How can I help you?"
 
     graph = get_admin_graph()
 
+    # Build messages — system prompt + user context + history + new message
     messages = [SystemMessage(content=ADMIN_SYSTEM_PROMPT)]
 
-    history = _get_conversation_history(thread_id)
-    if user_context and not history:
+    # Inject verified user context as system message (from JWT)
+    if user_context:
         ctx_parts = []
         if user_context.get("name"):
             ctx_parts.append(f"User: {user_context['name']}")
@@ -171,32 +171,25 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
             ctx_parts.append(f"Role: {user_context['role']}")
         if user_context.get("email"):
             ctx_parts.append(f"Email: {user_context['email']}")
+        if user_context.get("scopes"):
+            ctx_parts.append(f"Scopes: {', '.join(user_context['scopes'])}")
         if ctx_parts:
             messages.append(SystemMessage(content=f"Logged-in admin: {', '.join(ctx_parts)}"))
 
-    messages.extend(history)
     messages.append(HumanMessage(content=message))
 
+    # Use LangGraph checkpointer for conversation persistence via thread_id
+    thread_config = {"configurable": {"thread_id": thread_id}}
+
     try:
-        result = await graph.ainvoke({"messages": messages})
+        result = await graph.ainvoke(
+            {"messages": messages},
+            config=thread_config,
+        )
 
         all_result_messages = result["messages"]
 
-        updated_history = [SystemMessage(content=ADMIN_SYSTEM_PROMPT)]
-        if user_context and not history:
-            ctx_parts = []
-            if user_context.get("name"):
-                ctx_parts.append(f"User: {user_context['name']}")
-            if user_context.get("role"):
-                ctx_parts.append(f"Role: {user_context['role']}")
-            if user_context.get("email"):
-                ctx_parts.append(f"Email: {user_context['email']}")
-            if ctx_parts:
-                updated_history.append(SystemMessage(content=f"Logged-in admin: {', '.join(ctx_parts)}"))
-
-        updated_history.extend(all_result_messages)
-        _save_conversation_history(thread_id, updated_history)
-
+        # Extract the final AI response
         response_text = ""
         for msg in reversed(all_result_messages):
             if isinstance(msg, AIMessage) and msg.content:

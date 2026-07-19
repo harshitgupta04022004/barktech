@@ -39,6 +39,10 @@ class AgentConfig:
     # Google OAuth
     google_client_id: str = field(default_factory=lambda: os.getenv("GOOGLE_CLIENT_ID", ""))
 
+    # Auth — same secret as Node.js backend for cross-service JWT verification
+    jwt_secret: str = field(default_factory=lambda: os.getenv("JWT_SECRET", ""))
+    jwt_algorithm: str = "HS256"
+
     # Backend API for model config
     backend_api_url: str = field(default_factory=lambda: os.getenv("BACKEND_API_URL", "http://localhost:3000"))
 
