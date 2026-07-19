@@ -1,0 +1,43 @@
+# === Bark Technologies — AI Agent Dependencies ===
+# Install: pip install -r requirements.txt
+
+# ── Web Framework ──────────────────────────────────
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-dotenv>=1.0.0
+
+# ── Database ───────────────────────────────────────
+motor>=3.7.0
+pymongo>=4.10.0
+
+# ── Pydantic ────────────────────────────────────────
+pydantic>=2.10.0
+
+# ── AI / Agent ──────────────────────────────────────
+langgraph>=0.2.0
+langgraph-checkpoint>=2.0.0
+langchain-core>=0.3.0
+langchain-openai>=0.2.0
+langchain-community>=0.3.0
+langsmith>=0.1.0
+openai>=1.50.0
+
+# ── MCP Integration ────────────────────────────────
+langchain-mcp-adapters>=0.1.0
+fastmcp>=0.1.0
+mcp>=1.0.0
+
+# ── Auth / JWT ─────────────────────────────────────
+PyJWT>=2.9.0
+
+# ── Media / Storage ────────────────────────────────
+boto3>=1.35.0
+
+# ── Google Calendar API ─────────────────────────────
+google-api-python-client>=2.150.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.2.0
+
+# ── Utilities ───────────────────────────────────────
+httpx>=0.28.0
+orjson>=3.10.0
