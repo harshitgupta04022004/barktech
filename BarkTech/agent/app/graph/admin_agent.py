@@ -5,6 +5,8 @@ Per architecture spec:
 - Each agent has its own tools bound (native + MCP)
 - Human-in-the-loop for destructive operations
 - Observability: tracks all interactions for debugging
+- Long-term memory via LangMem tools (semantic/episodic/procedural)
+- Short-term memory via LangGraph checkpointer (thread-scoped)
 """
 
 import json
@@ -18,27 +20,12 @@ from langgraph.prebuilt import ToolNode
 from app.config import config
 from app.tools import admin_tools
 from app.tools.mcp_tools import all_mcp_tools, whatsapp_tools, email_tools, media_tools, web_research_tools
+from app.tools.memory import get_memory_tools
+from app.checkpointer import get_checkpointer, get_store
 from app.services.observability import observability
 from app.guardrails import check_input, check_output
 
 logger = logging.getLogger(__name__)
-
-# In-memory conversation store
-_conversation_store: dict[str, list] = {}
-_MAX_HISTORY = 40
-
-
-def _get_conversation_history(thread_id: str) -> list:
-    return _conversation_store.get(thread_id, [])
-
-
-def _save_conversation_history(thread_id: str, messages: list):
-    trimmed = messages[-_MAX_HISTORY:] if len(messages) > _MAX_HISTORY else messages
-    _conversation_store[thread_id] = trimmed
-
-
-def _clear_conversation_history(thread_id: str):
-    _conversation_store.pop(thread_id, None)
 
 
 # ── Supervisor System Prompt ──────────────────────────
@@ -257,8 +244,12 @@ SCHEDULING_PROMPT = """You are the Scheduling Agent for Bark Technologies.
 
 
 # ── Build the Multi-Agent Graph ───────────────────────
-def _build_admin_graph():
-    """Build the admin multi-agent graph with supervisor routing."""
+def _build_admin_graph(user_id: str = "default"):
+    """Build the admin multi-agent graph with supervisor routing.
+
+    Args:
+        user_id: Admin user ID for memory namespace scoping.
+    """
     supervisor = _build_supervisor_node()
 
     # Build specialized agents with their tools
@@ -284,6 +275,9 @@ def _build_admin_graph():
     scheduling_tools = [t for t in admin_tools if t.name in (
         "create_calendar_event", "list_calendar_events", "cancel_calendar_event", "get_calendar_event"
     )]
+
+    # Add memory tools (scoped to this admin user)
+    memory_manage, memory_search = get_memory_tools(user_id)
 
     product_agent = _build_tool_agent(PRODUCT_PROMPT, product_tools, "product")
     lead_agent = _build_tool_agent(LEAD_PROMPT, lead_tools, "lead")
@@ -331,27 +325,42 @@ def _build_admin_graph():
     for agent_name in ["product", "lead", "invoice", "analytics", "comms", "campaign", "scheduling"]:
         graph.add_edge(agent_name, "supervisor")
 
-    return graph.compile()
+    # Compile with store for long-term memory
+    store = get_store()
+    compile_kwargs = {}
+    if store is not None:
+        compile_kwargs["store"] = store
+
+    return graph.compile(**compile_kwargs)
 
 
-_admin_graph = None
+_admin_graphs: dict[str, object] = {}
 
 
-def get_admin_graph():
-    global _admin_graph
-    if _admin_graph is None:
-        _admin_graph = _build_admin_graph()
-    return _admin_graph
+def get_admin_graph(user_id: str = "default"):
+    """Get or create the admin graph for a specific user.
+
+    Each user gets their own graph instance with user-scoped memory tools.
+    """
+    if user_id not in _admin_graphs:
+        _admin_graphs[user_id] = _build_admin_graph(user_id)
+    return _admin_graphs[user_id]
 
 
 async def run_admin_agent(message: str, thread_id: str, user_context: dict | None = None) -> tuple[str, dict]:
     """Run the admin multi-agent system for an admin chat message.
+
+    Uses LangGraph checkpointer for short-term thread-scoped memory.
+    Uses LangMem tools for long-term cross-thread memory.
 
     Returns:
         Tuple of (response_text, usage_data) where usage_data contains
         input_tokens, output_tokens, total_tokens, cost from OpenRouter.
     """
     start_time = time.time()
+
+    # Extract user_id for memory scoping
+    user_id = user_context.get("user_id", "default") if user_context else "default"
 
     # Input guardrails
     input_check = check_input(message)
@@ -360,7 +369,14 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
 
     # Handle clear commands
     if message.strip().lower() in ("/clear", "clear", "reset"):
-        _clear_conversation_history(thread_id)
+        # Clear checkpointer state for this thread
+        checkpointer = get_checkpointer()
+        if checkpointer:
+            try:
+                config_dict = {"configurable": {"thread_id": thread_id}}
+                await checkpointer.awrite_checkpoint(config_dict, checkpoint=None)
+            except Exception:
+                pass
         return "Chat cleared. How can I help you?", {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "cost": 0}
 
     # Refresh model config from backend API (every 5 minutes)
@@ -369,14 +385,13 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
     except Exception:
         pass
 
-    graph = get_admin_graph()
+    graph = get_admin_graph(user_id)
 
-    # Build messages with conversation history
+    # Build messages — conversation history comes from checkpointer
     messages = []
 
-    # Add user context as system info (only once per session)
-    history = _get_conversation_history(thread_id)
-    if user_context and not history:
+    # Add user context as system info
+    if user_context:
         ctx_parts = []
         if user_context.get("name"):
             ctx_parts.append(f"User: {user_context['name']}")
@@ -387,16 +402,24 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
         if ctx_parts:
             messages.append(SystemMessage(content=f"Logged-in admin: {', '.join(ctx_parts)}"))
 
-    # Add conversation history
-    messages.extend(history)
-
     # Add current user message
     messages.append(HumanMessage(content=message))
 
     usage_data = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "cost": 0}
 
+    # LangGraph config with thread_id for checkpointer persistence
+    checkpointer = get_checkpointer()
+    graph_config = {"configurable": {"thread_id": thread_id}}
+    if checkpointer is None:
+        # If no checkpointer, use in-memory fallback
+        from langgraph.checkpoint.memory import MemorySaver
+        graph_config = {"configurable": {"thread_id": thread_id}}
+
     try:
-        result = await graph.ainvoke({"messages": messages})
+        result = await graph.ainvoke(
+            {"messages": messages},
+            config=graph_config,
+        )
 
         all_result_messages = result["messages"]
 
@@ -416,22 +439,6 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
                     usage_data["cost"] += float(meta["cost"]) or 0.0
 
         usage_data["total_tokens"] = usage_data["input_tokens"] + usage_data["output_tokens"]
-
-        # Save the conversation history
-        updated_history = []
-        if user_context and not history:
-            ctx_parts = []
-            if user_context.get("name"):
-                ctx_parts.append(f"User: {user_context['name']}")
-            if user_context.get("role"):
-                ctx_parts.append(f"Role: {user_context['role']}")
-            if user_context.get("email"):
-                ctx_parts.append(f"Email: {user_context['email']}")
-            if ctx_parts:
-                updated_history.append(SystemMessage(content=f"Logged-in admin: {', '.join(ctx_parts)}"))
-
-        updated_history.extend(all_result_messages)
-        _save_conversation_history(thread_id, updated_history)
 
         # Extract final response
         response_text = ""

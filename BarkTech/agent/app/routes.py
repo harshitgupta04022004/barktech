@@ -3,10 +3,12 @@
 Per architecture spec:
 - Client chat: POST /chat (JWT auth — any authenticated user)
 - Admin chat: POST /admin/chat (JWT auth with admin role)
+- Admin sessions: GET /admin/sessions, DELETE /admin/sessions/:id
 - Both use LangGraph checkpointer for conversation persistence
 - Both save chat logs to MongoDB for observability
 """
 
+import json
 import logging
 import time
 from datetime import datetime
@@ -18,6 +20,7 @@ from typing import Optional
 from app.auth.middleware import authenticate_client, authenticate_admin
 from app.graph.client_agent import run_client_agent
 from app.graph.admin_agent import run_admin_agent
+from app.checkpointer import get_checkpointer
 from app.config import config
 
 logger = logging.getLogger(__name__)
@@ -192,7 +195,13 @@ async def admin_chat(body: AdminChatMessage, user: dict = Depends(authenticate_a
 
 @admin_router.post("/chat/stream")
 async def admin_chat_stream(body: AdminChatMessage, user: dict = Depends(authenticate_admin)):
-    """SSE streaming chat for admin dashboard."""
+    """SSE streaming chat for admin dashboard.
+
+    Returns Server-Sent Events with:
+    - type: content_delta — streaming text chunks
+    - type: tool_call — tool invocation events
+    - type: done — completion signal with usage data
+    """
     thread_id = body.thread_id or f"admin-{user['user_id']}"
 
     async def event_generator():
@@ -217,7 +226,136 @@ async def admin_chat_stream(body: AdminChatMessage, user: dict = Depends(authent
             total_tokens=usage_data.get("total_tokens", 0),
             cost=usage_data.get("cost", 0),
         )
-        yield f"data: {result}\n\n"
+        # Send content as a single chunk (non-streaming backend response)
+        yield f"data: {json.dumps({'type': 'content_delta', 'content': result})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id, 'usage': usage_data})}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+# ── Session Management Endpoints ──────────────────────
+
+class SessionInfo(BaseModel):
+    thread_id: str
+    title: str
+    last_message_at: str
+    message_count: int
+
+
+@admin_router.get("/sessions")
+async def list_sessions(user: dict = Depends(authenticate_admin)):
+    """List all conversation threads for the authenticated admin user.
+
+    Returns threads from the LangGraph checkpointer, sorted by last activity.
+    """
+    user_id = user.get("user_id", "default")
+    thread_prefix = f"admin-{user_id}"
+
+    checkpointer = get_checkpointer()
+    if checkpointer is None:
+        return {"sessions": []}
+
+    try:
+        # Search MongoDB checkpoints collection for this user's threads
+        from motor.motor_asyncio import AsyncIOMotorClient
+
+        client = AsyncIOMotorClient(config.mongodb_uri)
+        db = client[config.mongodb_db]
+
+        # Query checkpoints collection for threads matching this user
+        pipeline = [
+            {"$match": {"thread_id": {"$regex": f"^{thread_prefix}"}}},
+            {"$sort": {"created_at": -1}},
+            {"$group": {
+                "_id": "$thread_id",
+                "last_message_at": {"$first": "$created_at"},
+                "message_count": {"$sum": 1},
+            }},
+            {"$sort": {"last_message_at": -1}},
+            {"$limit": 50},
+        ]
+
+        results = await db["langgraph_checkpoints"].aggregate(pipeline).to_list(length=50)
+
+        sessions = []
+        for r in results:
+            thread_id = r["_id"]
+            # Extract title from the first user message in the thread
+            title = "New Conversation"
+            try:
+                checkpoint = await checkpointer.aget({"configurable": {"thread_id": thread_id}})
+                if checkpoint and checkpoint.get("channel_values"):
+                    messages = checkpoint["channel_values"].get("messages", [])
+                    for msg in messages:
+                        if hasattr(msg, "type") and msg.type == "human" and hasattr(msg, "content"):
+                            title = msg.content[:80] + ("..." if len(msg.content) > 80 else "")
+                            break
+            except Exception:
+                pass
+
+            sessions.append(SessionInfo(
+                thread_id=thread_id,
+                title=title,
+                last_message_at=r.get("last_message_at", datetime.utcnow().isoformat()),
+                message_count=r.get("message_count", 0),
+            ))
+
+        return {"sessions": [s.model_dump() for s in sessions]}
+    except Exception as e:
+        logger.error(f"Failed to list sessions: {e}")
+        return {"sessions": []}
+
+
+@admin_router.delete("/sessions/{session_id}")
+async def delete_session(session_id: str, user: dict = Depends(authenticate_admin)):
+    """Delete a conversation thread and all its checkpoints.
+
+    Only allows deleting threads belonging to the authenticated admin user.
+    """
+    user_id = user.get("user_id", "default")
+    expected_prefix = f"admin-{user_id}"
+
+    if not session_id.startswith(expected_prefix):
+        raise HTTPException(status_code=403, detail="Not authorized to delete this session")
+
+    try:
+        from motor.motor_asyncio import AsyncIOMotorClient
+
+        client = AsyncIOMotorClient(config.mongodb_uri)
+        db = client[config.mongodb_db]
+
+        # Delete all checkpoints for this thread
+        result = await db["langgraph_checkpoints"].delete_many({"thread_id": session_id})
+
+        return {"deleted": True, "checkpoints_removed": result.deleted_count}
+    except Exception as e:
+        logger.error(f"Failed to delete session: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete session")
+
+
+@admin_router.post("/sessions/{session_id}/clear")
+async def clear_session(session_id: str, user: dict = Depends(authenticate_admin)):
+    """Clear conversation history for a thread (keeps the thread but removes history).
+
+    Only allows clearing threads belonging to the authenticated admin user.
+    """
+    user_id = user.get("user_id", "default")
+    expected_prefix = f"admin-{user_id}"
+
+    if not session_id.startswith(expected_prefix):
+        raise HTTPException(status_code=403, detail="Not authorized to clear this session")
+
+    try:
+        from motor.motor_asyncio import AsyncIOMotorClient
+
+        client = AsyncIOMotorClient(config.mongodb_uri)
+        db = client[config.mongodb_db]
+
+        # Delete all checkpoints for this thread
+        result = await db["langgraph_checkpoints"].delete_many({"thread_id": session_id})
+
+        return {"cleared": True, "checkpoints_removed": result.deleted_count}
+    except Exception as e:
+        logger.error(f"Failed to clear session: {e}")
+        raise HTTPException(status_code=500, detail="Failed to clear session")

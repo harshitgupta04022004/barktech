@@ -26,9 +26,13 @@ async def lifespan(app: FastAPI):
     app.state.mongo_db = app.state.mongo_client[config.mongodb_db]
 
     # Initialize LangGraph checkpointer (MongoDB-backed conversation persistence)
-    from app.checkpointer import setup_checkpointer
+    from app.checkpointer import setup_checkpointer, setup_store
     app.state.checkpointer = await setup_checkpointer()
     logger.info("LangGraph checkpointer initialized")
+
+    # Initialize LangGraph Store (long-term cross-thread memory)
+    app.state.store = await setup_store()
+    logger.info("LangGraph store initialized")
 
     yield
 

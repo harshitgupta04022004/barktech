@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { PublicLayout } from './components/layout/PublicLayout';
 import { AdminLayout } from './components/layout/AdminLayout';
+import { ChatLayout } from './components/layout/ChatLayout';
 import { HomePage } from './pages/public/HomePage';
 import { ProductsPage } from './pages/public/ProductsPage';
 import { ProductDetailPage } from './pages/public/ProductDetailPage';
@@ -30,7 +31,6 @@ import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminLeads } from './pages/admin/AdminLeads';
 import { AdminInvoices } from './pages/admin/AdminInvoices';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
-import { AdminAI } from './pages/admin/AdminAI';
 import { AdminSettings } from './pages/admin/AdminSettings';
 import { AdminStock } from './pages/admin/AdminStock';
 import { AdminCMS } from './pages/admin/AdminCMS';
@@ -39,6 +39,7 @@ import { AdminAudit } from './pages/admin/AdminAudit';
 import { AdminInstallations } from './pages/admin/AdminInstallations';
 import { AdminCampaigns } from './pages/admin/AdminCampaigns';
 import { AdminChatHistory } from './pages/admin/AdminChatHistory';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 export default function App() {
   return (
@@ -73,22 +74,26 @@ export default function App() {
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/profile" element={<Profile />} />
 
-      {/* Admin routes */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboard />} />
-        <Route path="products" element={<AdminProducts />} />
-        <Route path="leads" element={<AdminLeads />} />
-        <Route path="invoices" element={<AdminInvoices />} />
-        <Route path="stock" element={<AdminStock />} />
-        <Route path="cms" element={<AdminCMS />} />
-        <Route path="users" element={<AdminUsers />} />
-        <Route path="audit" element={<AdminAudit />} />
-        <Route path="installations" element={<AdminInstallations />} />
-        <Route path="campaigns" element={<AdminCampaigns />} />
-        <Route path="chat-logs" element={<AdminChatHistory />} />
-        <Route path="analytics" element={<AdminAnalytics />} />
-        <Route path="ai" element={<AdminAI />} />
-        <Route path="settings" element={<AdminSettings />} />
+      {/* Admin routes — protected */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="leads" element={<AdminLeads />} />
+          <Route path="invoices" element={<AdminInvoices />} />
+          <Route path="stock" element={<AdminStock />} />
+          <Route path="cms" element={<AdminCMS />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="audit" element={<AdminAudit />} />
+          <Route path="installations" element={<AdminInstallations />} />
+          <Route path="campaigns" element={<AdminCampaigns />} />
+          <Route path="chat-logs" element={<AdminChatHistory />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
+
+        {/* AI Chat — standalone full-page layout (bypasses AdminLayout) */}
+        <Route path="/admin/ai" element={<ChatLayout />} />
       </Route>
     </Routes>
   );
