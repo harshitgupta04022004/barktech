@@ -8,7 +8,7 @@ Per architecture spec:
 from app.tools.products import search_products, get_product_specs
 from app.tools.leads import create_inquiry, search_leads, update_lead_status, get_lead_stats
 from app.tools.faq import get_faq, get_contact_info
-from app.tools.invoices import create_invoice, get_invoice_stats
+from app.tools.invoices import create_invoice, get_invoice_stats, generate_invoice_pdf, list_invoices, mark_invoice_status
 from app.tools.stock import get_stock_info, get_low_stock_products
 from app.mcp.calendar_mcp import create_calendar_event, list_calendar_events, cancel_calendar_event, get_calendar_event
 from app.tools.mcp_tools import (
@@ -16,7 +16,10 @@ from app.tools.mcp_tools import (
     send_email, send_template_email,
     presign_media_upload, get_media_public_url,
     research_url, research_web_search,
-    whatsapp_tools, email_tools, media_tools, web_research_tools, all_mcp_tools,
+    create_ad_campaign, publish_social_post, get_ad_campaign_stats,
+    generate_creative_design, export_design_asset,
+    whatsapp_tools, email_tools, media_tools, web_research_tools,
+    ads_tools, canvas_tools, all_mcp_tools,
 )
 
 # Client tools - used by the client-facing agent
@@ -40,6 +43,9 @@ admin_tools = [
     get_contact_info,
     create_invoice,
     get_invoice_stats,
+    generate_invoice_pdf,
+    list_invoices,
+    mark_invoice_status,
     get_stock_info,
     get_low_stock_products,
     create_calendar_event,
@@ -60,13 +66,17 @@ __all__ = [
     "search_products", "get_product_specs", "create_inquiry",
     "search_leads", "update_lead_status", "get_lead_stats",
     "get_faq", "get_contact_info",
-    "create_invoice", "get_invoice_stats",
+    "create_invoice", "get_invoice_stats", "generate_invoice_pdf",
+    "list_invoices", "mark_invoice_status",
     "get_stock_info", "get_low_stock_products",
     "create_calendar_event", "list_calendar_events", "cancel_calendar_event", "get_calendar_event",
     "send_whatsapp_notification", "send_admin_whatsapp_alert",
     "send_email", "send_template_email",
     "presign_media_upload", "get_media_public_url",
     "research_url", "research_web_search",
+    "create_ad_campaign", "publish_social_post", "get_ad_campaign_stats",
+    "generate_creative_design", "export_design_asset",
     "client_tools", "admin_tools", "calendar_tools",
-    "whatsapp_tools", "email_tools", "media_tools", "web_research_tools", "all_mcp_tools",
+    "whatsapp_tools", "email_tools", "media_tools", "web_research_tools",
+    "ads_tools", "canvas_tools", "all_mcp_tools",
 ]

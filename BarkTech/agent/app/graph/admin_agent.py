@@ -19,7 +19,7 @@ from langgraph.graph import StateGraph, MessagesState, START, END
 from langgraph.prebuilt import ToolNode
 from app.config import config
 from app.tools import admin_tools
-from app.tools.mcp_tools import all_mcp_tools, whatsapp_tools, email_tools, media_tools, web_research_tools
+from app.tools.mcp_tools import all_mcp_tools, whatsapp_tools, email_tools, media_tools, web_research_tools, ads_tools, canvas_tools
 from app.tools.memory import get_memory_tools
 from app.tools.file_processing import build_multimodal_content, format_file_context
 from app.checkpointer import get_checkpointer, get_store
@@ -182,16 +182,21 @@ INVOICE_PROMPT = """You are the Invoice Management Agent for Bark Technologies.
 - View invoice statistics and revenue data
 - Generate PDF invoices via WeasyPrint
 - Send invoice PDFs via email
+- List and filter invoices by status
+- Update invoice status (sent, paid, partial, overdue)
 
 ## Tools Available
 - create_invoice, get_invoice_stats: Invoice CRUD and stats
+- generate_invoice_pdf: Generate print-ready PDF via WeasyPrint (returns download URL)
+- list_invoices, mark_invoice_status: List and update invoice status
 - send_email, send_template_email: Send invoice PDFs via email
 
 ## Rules
 1. CREATE invoice: REQUIRES HUMAN CONFIRMATION before creating
 2. Always confirm amounts and GST rates
 3. Invoice PDF is returned as a download URL, never raw bytes
-4. No payment gateway - invoices track paid/partial status manually"""
+4. No payment gateway - invoices track paid/partial status manually
+5. Always confirm before marking invoice as paid"""
 
 ANALYTICS_PROMPT = """You are the Analytics Agent for Bark Technologies.
 
@@ -234,14 +239,21 @@ CAMPAIGN_PROMPT = """You are the Campaign Agent for Bark Technologies.
 - Manage ad campaigns and social media publishing
 - Generate creative designs for product visuals
 - Manage campaign analytics and performance
+- Publish posts to Facebook, Instagram, LinkedIn, Twitter, Reddit
 
 ## Tools Available
-- presign_media_upload, get_media_public_url: Manage campaign media
+- create_ad_campaign: Create new ad campaigns with budget and targeting
+- publish_social_post: Publish posts to social media platforms
+- get_ad_campaign_stats: Get campaign performance metrics
+- generate_creative_design: Generate product creatives and marketing visuals
+- export_design_asset: Export designs to various formats
+- presign_media_upload, get_media_public_url: Manage campaign media via S3/R2
 
 ## Rules
 1. Always confirm before publishing content
 2. Ensure brand consistency
-3. Track campaign performance metrics"""
+3. Track campaign performance metrics
+4. Confirm budget before creating campaigns"""
 
 SCHEDULING_PROMPT = """You are the Scheduling Agent for Bark Technologies.
 
@@ -281,7 +293,8 @@ def _build_admin_graph(user_id: str = "default"):
     )] + web_research_tools
 
     invoice_tools = [t for t in admin_tools if t.name in (
-        "create_invoice", "get_invoice_stats"
+        "create_invoice", "get_invoice_stats", "generate_invoice_pdf",
+        "list_invoices", "mark_invoice_status"
     )] + email_tools
 
     analytics_tools = [t for t in admin_tools if t.name in (
@@ -290,7 +303,7 @@ def _build_admin_graph(user_id: str = "default"):
     )]
 
     comms_tools = whatsapp_tools + email_tools
-    campaign_tools = media_tools
+    campaign_tools = media_tools + ads_tools + canvas_tools
     scheduling_tools = [t for t in admin_tools if t.name in (
         "create_calendar_event", "list_calendar_events", "cancel_calendar_event", "get_calendar_event"
     )]

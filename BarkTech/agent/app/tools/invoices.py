@@ -1,4 +1,4 @@
-"""Invoice tools — create and stats."""
+"""Invoice tools — create, stats, and PDF generation."""
 
 from langchain_core.tools import tool
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -97,3 +97,111 @@ async def get_invoice_stats() -> str:
     for r in results:
         lines.append(f"- {r['_id']}: {r['count']} (INR {r['total']:,.2f})")
     return "\n".join(lines)
+
+
+@tool
+async def generate_invoice_pdf(invoice_id: str) -> str:
+    """Generate a print-ready PDF for an existing invoice via WeasyPrint.
+
+    Returns a download URL, never raw PDF bytes. Use this after creating an invoice
+    to generate the PDF document for email or download.
+
+    Args:
+        invoice_id: The MongoDB ObjectId of the invoice to generate PDF for.
+    """
+    from bson import ObjectId
+    from app.services.invoice_pdf import invoice_pdf_service
+
+    db = _get_db()
+    try:
+        invoice = await db.invoices.find_one({"_id": ObjectId(invoice_id)})
+    except Exception:
+        return f"Invalid invoice ID: {invoice_id}"
+
+    if not invoice:
+        return f"Invoice not found: {invoice_id}"
+
+    # Build invoice data for the PDF service
+    invoice_data = {
+        "invoice_number": invoice.get("invoiceNumber", ""),
+        "contact_name": invoice.get("contactName", ""),
+        "email": invoice.get("email", ""),
+        "phone": invoice.get("phone", ""),
+        "company": invoice.get("company", ""),
+        "address": invoice.get("address", ""),
+        "items": invoice.get("items", []),
+        "subtotal": invoice.get("subtotal", 0),
+        "gst_amount": invoice.get("totalTax", 0),
+        "grand_total": invoice.get("grandTotal", 0),
+        "notes": invoice.get("notes", ""),
+        "invoice_date": invoice.get("createdAt", ""),
+    }
+
+    try:
+        pdf_path = invoice_pdf_service.generate_pdf(invoice_data)
+        # Return download URL, not raw bytes
+        download_url = f"/admin/invoices/{invoice_id}/pdf"
+        return f"PDF generated successfully!\nInvoice: {invoice.get('invoiceNumber', 'N/A')}\nDownload: {download_url}\nFile: {pdf_path}"
+    except Exception as e:
+        return f"Failed to generate PDF: {str(e)}"
+
+
+@tool
+async def list_invoices(
+    status: str = "",
+    limit: int = 20,
+    offset: int = 0,
+) -> str:
+    """List invoices with optional status filter. Admin-only tool.
+
+    Args:
+        status: Filter by status (draft, sent, paid, partial, overdue)
+        limit: Maximum results to return (default 20)
+        offset: Number of results to skip (for pagination)
+    """
+    db = _get_db()
+    query = {}
+    if status:
+        query["status"] = status
+
+    cursor = db.invoices.find(query).sort("createdAt", -1).skip(offset).limit(limit)
+    invoices = await cursor.to_list(length=limit)
+    total = await db.invoices.count_documents(query)
+
+    if not invoices:
+        return "No invoices found."
+
+    results = []
+    for inv in invoices:
+        results.append(
+            f"- **{inv.get('invoiceNumber', 'N/A')}**: {inv.get('contactName', 'Unknown')} | "
+            f"INR {inv.get('grandTotal', 0):,.2f} | Status: {inv.get('status', 'draft')}"
+        )
+
+    return f"Invoices ({total} total):\n\n" + "\n".join(results)
+
+
+@tool
+async def mark_invoice_status(invoice_id: str, status: str) -> str:
+    """Update invoice status (sent, paid, partial, overdue). Admin-only tool.
+
+    Requires human confirmation before marking as paid.
+
+    Args:
+        invoice_id: The MongoDB ObjectId of the invoice
+        status: New status (draft, sent, paid, partial, overdue)
+    """
+    from bson import ObjectId
+
+    valid_statuses = ["draft", "sent", "paid", "partial", "overdue"]
+    if status not in valid_statuses:
+        return f"Invalid status '{status}'. Valid options: {', '.join(valid_statuses)}"
+
+    db = _get_db()
+    result = await db.invoices.update_one(
+        {"_id": ObjectId(invoice_id)},
+        {"$set": {"status": status, "updatedAt": datetime.utcnow()}},
+    )
+    if result.matched_count == 0:
+        return "Invoice not found."
+    return f"Invoice {invoice_id} status updated to '{status}' successfully."

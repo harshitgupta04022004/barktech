@@ -124,3 +124,40 @@ async def delete_file(key: str) -> dict:
     except Exception as e:
         logger.error(f"Failed to delete file: {e}")
         return {"success": False, "error": str(e)}
+
+
+async def list_objects(prefix: str = "", limit: int = 100) -> dict:
+    """List files in S3/R2 bucket with optional prefix filter.
+
+    Args:
+        prefix: S3 key prefix to filter by (e.g., "products/" or "invoices/").
+        limit: Maximum number of objects to return (default 100).
+
+    Returns:
+        dict with keys: success (bool), objects (list of dicts with key, size, last_modified), error (str).
+    """
+    try:
+        client = _get_s3_client()
+        kwargs = {"Bucket": S3_BUCKET, "MaxKeys": limit}
+        if prefix:
+            kwargs["Prefix"] = prefix
+
+        response = client.list_objects_v2(**kwargs)
+        objects = []
+        for obj in response.get("Contents", []):
+            objects.append({
+                "key": obj["Key"],
+                "size": obj["Size"],
+                "last_modified": obj["LastModified"].isoformat() if obj.get("LastModified") else None,
+                "public_url": _build_public_url(obj["Key"]),
+            })
+
+        return {
+            "success": True,
+            "objects": objects,
+            "count": len(objects),
+            "is_truncated": response.get("IsTruncated", False),
+        }
+    except Exception as e:
+        logger.error(f"Failed to list objects: {e}")
+        return {"success": False, "error": str(e)}
