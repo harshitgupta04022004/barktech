@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
-import { Copy, Check, ChevronDown, ChevronRight, Wrench } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronRight, Wrench, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { ChatMessage as ChatMessageType } from '@/stores/chatStore';
+import type { ChatFile } from '@/api/agentChat';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -76,6 +77,39 @@ function ToolCallBlock({ name, args }: { name: string; args: Record<string, unkn
   );
 }
 
+function FileAttachment({ file }: { file: ChatFile }) {
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+  };
+
+  if (file.preview) {
+    return (
+      <div className="mt-1.5">
+        <img
+          src={file.preview}
+          alt={file.filename}
+          className="max-h-48 rounded-lg border border-[#e5e0d6] dark:border-[#3d3a35] object-contain"
+        />
+        <p className="mt-1 text-[10px] text-[#999]">{file.filename} ({formatSize(file.size)})</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-[#e5e0d6] dark:border-[#3d3a35] bg-[#f8f5ef] dark:bg-[#3d3a35] px-2.5 py-2">
+      <span className="flex h-8 w-8 items-center justify-center rounded bg-[#e5e0d6] dark:bg-[#2a2a2a]">
+        <FileText className="h-4 w-4 text-[#666] dark:text-[#999]" />
+      </span>
+      <div>
+        <p className="text-xs font-medium text-[#1a1a1a] dark:text-[#f5f0e8]">{file.filename}</p>
+        <p className="text-[10px] text-[#999]">{formatSize(file.size)}</p>
+      </div>
+    </div>
+  );
+}
+
 export function ChatMessage({ message }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
 
@@ -89,6 +123,14 @@ export function ChatMessage({ message }: ChatMessageProps) {
     return (
       <div className="flex justify-end py-4">
         <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[#f0ece0] dark:bg-[#3d3a35] px-4 py-3 text-sm text-[#1a1a1a] dark:text-[#f5f0e8]">
+          {/* File attachments */}
+          {message.files && message.files.length > 0 && (
+            <div className="mb-2">
+              {message.files.map((file) => (
+                <FileAttachment key={file.id} file={file} />
+              ))}
+            </div>
+          )}
           <p className="whitespace-pre-wrap">{message.content}</p>
         </div>
       </div>

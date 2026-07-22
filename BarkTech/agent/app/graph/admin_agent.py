@@ -21,6 +21,7 @@ from app.config import config
 from app.tools import admin_tools
 from app.tools.mcp_tools import all_mcp_tools, whatsapp_tools, email_tools, media_tools, web_research_tools
 from app.tools.memory import get_memory_tools
+from app.tools.file_processing import build_multimodal_content, format_file_context
 from app.checkpointer import get_checkpointer, get_store
 from app.services.observability import observability
 from app.guardrails import check_input, check_output
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 SUPERVISOR_SYSTEM_PROMPT = """You are the Admin Operations Supervisor for Bark Technologies — a B2B machinery company.
 
 ## Your Role
-You coordinate specialized agents to handle admin operations. You decide which agent should handle each task.
+You coordinate specialized agents to handle admin operations. You decide which agent should handle each task, or answer directly if it's a general question.
 
 ## Available Agents
 - **product**: Product catalog management, specs, media, documents, stock/inventory
@@ -45,20 +46,29 @@ You coordinate specialized agents to handle admin operations. You decide which a
 - **FINISH**: Task is complete and a final answer has been provided
 
 ## Decision Rules
-1. If the task is fully handled, respond with FINISH
-2. If the task involves product operations, respond with product
-3. If the task involves leads/inquiries, respond with lead
-4. If the task involves invoicing, respond with invoice
-5. If the task involves analytics/reports, respond with analytics
-6. If the task involves notifications/emails, respond with comms
-7. If the task involves ad campaigns or creative design, respond with campaign
-8. If the task involves scheduling/calendar, respond with scheduling
+1. If the user is asking a general question about capabilities, Bark Technologies, or how things work — answer directly and fully (your response will be shown to the user)
+2. If the task is fully handled by a previous agent response, respond with FINISH
+3. If the task involves product operations, respond with product
+4. If the task involves leads/inquiries, respond with lead
+5. If the task involves invoicing, respond with invoice
+6. If the task involves analytics/reports, respond with analytics
+7. If the task involves notifications/emails, respond with comms
+8. If the task involves ad campaigns or creative design, respond with campaign
+9. If the task involves scheduling/calendar, respond with scheduling
 
 ## Human-in-the-Loop
 For destructive operations (delete, bulk update) or financial operations (create invoice), set awaiting_human_input=true and ask a clear question with choices.
 
+## About Bark Technologies
+Bark Technologies is a B2B machinery company specializing in packaging solutions. They offer:
+- Machinery: filling machines, capping machines, labeling machines, packaging lines
+- Services: installation, maintenance, calibration, site visits
+- Products include: bottle filling machines, cap tightening machines, shrink wrap machines, conveyors, and more
+- GST billing, invoice management, lead management, inventory tracking
+
 ## Output Format
-Respond with ONLY one word: product, lead, invoice, analytics, comms, campaign, scheduling, or FINISH"""
+For routing decisions: respond with ONLY one word: product, lead, invoice, analytics, comms, campaign, scheduling, or FINISH
+For general questions: provide a helpful, complete answer directly (do NOT just say FINISH)"""
 
 
 def _build_llm():
@@ -83,8 +93,17 @@ def _build_supervisor_node():
         decision = response.content.strip().lower()
 
         valid_agents = {"product", "lead", "invoice", "analytics", "comms", "campaign", "scheduling", "finish"}
+
+        # If the response looks like a general answer (not a routing word),
+        # treat it as a direct response for general questions
         if decision not in valid_agents:
-            decision = "finish"
+            # The LLM gave a full response instead of a routing word
+            # Return it as an AI message and go to END
+            return {
+                "messages": [AIMessage(content=response.content)],
+                "next_agent": "finish",
+                "current_agent": "supervisor",
+            }
 
         return {"next_agent": decision, "current_agent": "supervisor"}
 
@@ -347,11 +366,17 @@ def get_admin_graph(user_id: str = "default"):
     return _admin_graphs[user_id]
 
 
-async def run_admin_agent(message: str, thread_id: str, user_context: dict | None = None) -> tuple[str, dict]:
+async def run_admin_agent(message: str, thread_id: str, user_context: dict | None = None, files: list | None = None) -> tuple[str, dict]:
     """Run the admin multi-agent system for an admin chat message.
 
     Uses LangGraph checkpointer for short-term thread-scoped memory.
     Uses LangMem tools for long-term cross-thread memory.
+
+    Args:
+        message: User's text message
+        thread_id: Thread ID for conversation persistence
+        user_context: User context dict with user_id, name, email, role
+        files: List of processed file dicts from file upload endpoint
 
     Returns:
         Tuple of (response_text, usage_data) where usage_data contains
@@ -403,7 +428,17 @@ async def run_admin_agent(message: str, thread_id: str, user_context: dict | Non
             messages.append(SystemMessage(content=f"Logged-in admin: {', '.join(ctx_parts)}"))
 
     # Add current user message
-    messages.append(HumanMessage(content=message))
+    # If files are attached, build multimodal content for vision-capable models
+    if files:
+        # Add file context to the message text for agents that process documents
+        file_context = format_file_context(files)
+        enhanced_message = message + file_context
+
+        # Build multimodal content (images as base64, documents as text)
+        content = build_multimodal_content(enhanced_message, files)
+        messages.append(HumanMessage(content=content))
+    else:
+        messages.append(HumanMessage(content=message))
 
     usage_data = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "cost": 0}
 

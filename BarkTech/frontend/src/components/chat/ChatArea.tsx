@@ -1,6 +1,6 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useChatStore } from '@/stores/chatStore';
-import { agentChatApi } from '@/api/agentChat';
+import { agentChatApi, type ChatFile } from '@/api/agentChat';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { Composer } from '@/components/chat/Composer';
 import { EmptyState } from '@/components/chat/EmptyState';
@@ -24,15 +24,42 @@ export function ChatArea({ settings }: ChatAreaProps) {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleUpload = useCallback(async (files: File[]): Promise<ChatFile[]> => {
+    setIsUploading(true);
+    try {
+      const processed = await agentChatApi.uploadFiles(files);
+      return files.map((file, idx) => ({
+        id: crypto.randomUUID(),
+        filename: file.name,
+        size: file.size,
+        type: file.type,
+        status: 'ready' as const,
+        processedData: processed[idx],
+      }));
+    } catch (err) {
+      return files.map((file) => ({
+        id: crypto.randomUUID(),
+        filename: file.name,
+        size: file.size,
+        type: file.type,
+        status: 'error' as const,
+        error: err instanceof Error ? err.message : 'Upload failed',
+      }));
+    } finally {
+      setIsUploading(false);
+    }
+  }, []);
+
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (!content.trim() || isStreaming) return;
+    async (content: string, files: ChatFile[] = []) => {
+      if ((!content.trim() && files.length === 0) || isStreaming) return;
 
       // Create thread if none active
       let threadId = activeThreadId;
@@ -40,31 +67,46 @@ export function ChatArea({ settings }: ChatAreaProps) {
         threadId = createThread();
       }
 
-      // Add user message
-      addMessage({ role: 'user', content });
+      // Add user message with files
+      addMessage({
+        role: 'user',
+        content,
+        files: files.length > 0 ? files : undefined,
+      });
       setStreaming(true);
 
       // Add empty assistant message for streaming
       addMessage({ role: 'assistant', content: '' });
 
-      const handle = agentChatApi.streamChat(content, threadId, {
-        onChunk: (_chunk, fullContent) => {
-          updateLastMessage(fullContent);
+      // Prepare processed file data for the backend
+      const processedFiles = files
+        .filter((f) => f.processedData !== undefined)
+        .map((f) => f.processedData as Record<string, unknown>);
+
+      const handle = agentChatApi.streamChat(
+        content,
+        threadId,
+        {
+          onChunk: (_chunk, fullContent) => {
+            updateLastMessage(fullContent);
+          },
+          onDone: (fullContent, _usage) => {
+            if (!fullContent) {
+              updateLastMessage('No response received.');
+            }
+            setStreaming(false);
+          },
+          onError: (error) => {
+            updateLastMessage(`Error: ${error}`);
+            setStreaming(false);
+          },
+          onToolCall: (toolName, args) => {
+            addToolCall(toolName, args);
+          },
         },
-        onDone: (fullContent, _usage) => {
-          if (!fullContent) {
-            updateLastMessage('No response received.');
-          }
-          setStreaming(false);
-        },
-        onError: (error) => {
-          updateLastMessage(`Error: ${error}`);
-          setStreaming(false);
-        },
-        onToolCall: (toolName, args) => {
-          addToolCall(toolName, args);
-        },
-      }, settings ? { model: settings.model, temperature: settings.temperature } : undefined);
+        settings ? { model: settings.model, temperature: settings.temperature } : undefined,
+        processedFiles.length > 0 ? processedFiles : undefined
+      );
 
       abortRef.current = handle.abort;
     },
@@ -128,6 +170,8 @@ export function ChatArea({ settings }: ChatAreaProps) {
             onSend={sendMessage}
             onStop={handleStop}
             isStreaming={isStreaming}
+            isUploading={isUploading}
+            onUpload={handleUpload}
           />
           <p className="mt-2 text-center text-xs text-[#bbb] dark:text-[#666]">
             Bark Admin AI can make mistakes. Please double-check important information.

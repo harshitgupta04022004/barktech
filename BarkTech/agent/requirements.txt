@@ -36,6 +36,8 @@ python-jose[cryptography]>=3.3.0
 
 # ── Media / Storage ────────────────────────────────
 boto3>=1.35.0
+PyPDF2>=3.0.0
+python-multipart>=0.0.9
 
 # ── Google Calendar API ─────────────────────────────
 google-api-python-client>=2.150.0

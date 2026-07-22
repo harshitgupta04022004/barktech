@@ -1,6 +1,7 @@
 /**
  * Agent Chat API — communicates with the Python FastAPI agent service.
  * Handles session management, streaming chat, and conversation history.
+ * Supports file uploads for multimodal chat (images, PDFs, text files).
  */
 
 import { AGENT_BASE_URL, STORAGE_KEYS } from '@/lib/constants';
@@ -41,6 +42,19 @@ export interface ChatSettingsPayload {
 
 export interface AgentChatHandle {
   abort: () => void;
+}
+
+/** Represents a file attached to a chat message */
+export interface ChatFile {
+  id: string;
+  filename: string;
+  size: number;
+  type: string; // MIME type
+  preview?: string; // base64 data URL for images
+  status: 'uploading' | 'processing' | 'ready' | 'error';
+  error?: string;
+  /** Processed file data from the backend (image base64, extracted text, etc.) */
+  processedData?: Record<string, unknown>;
 }
 
 function getToken(): string | null {
@@ -117,7 +131,8 @@ export const agentChatApi = {
     message: string,
     threadId: string,
     callbacks: AgentChatCallbacks,
-    settings?: ChatSettingsPayload
+    settings?: ChatSettingsPayload,
+    files?: Array<Record<string, unknown>>
   ): AgentChatHandle {
     const abortController = new AbortController();
 
@@ -126,7 +141,7 @@ export const agentChatApi = {
         const response = await fetch(`${AGENT_BASE_URL}/admin/chat/stream`, {
           method: 'POST',
           headers: buildHeaders(),
-          body: JSON.stringify({ message, thread_id: threadId, ...settings }),
+          body: JSON.stringify({ message, thread_id: threadId, files, ...settings }),
           signal: abortController.signal,
         });
 
@@ -198,6 +213,42 @@ export const agentChatApi = {
     return {
       abort: () => abortController.abort(),
     };
+  },
+
+  /**
+   * Upload files for chat attachment processing.
+   * Sends files to the agent service for processing (text extraction, image encoding, etc.)
+   */
+  async uploadFiles(files: File[]): Promise<Array<Record<string, unknown>>> {
+    try {
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append('files', file);
+      }
+
+      const token = getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${AGENT_BASE_URL}/admin/upload`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.detail || `Upload failed (${response.status})`);
+      }
+
+      const data = await response.json();
+      return data.files || [];
+    } catch (err) {
+      console.error('File upload error:', err);
+      throw err;
+    }
   },
 
   /**

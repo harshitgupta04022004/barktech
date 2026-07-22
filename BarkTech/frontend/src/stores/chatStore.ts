@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { STORAGE_KEYS } from '@/lib/constants';
-import type { Thread } from '@/api/agentChat';
+import type { Thread, ChatFile } from '@/api/agentChat';
 
 export interface ChatMessage {
   id: string;
@@ -12,6 +12,7 @@ export interface ChatMessage {
     name: string;
     args: Record<string, unknown>;
   }>;
+  files?: ChatFile[];
 }
 
 interface ChatState {

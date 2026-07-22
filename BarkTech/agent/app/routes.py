@@ -3,25 +3,28 @@
 Per architecture spec:
 - Client chat: POST /chat (JWT auth — any authenticated user)
 - Admin chat: POST /admin/chat (JWT auth with admin role)
+- Admin file upload: POST /admin/upload (multipart/form-data)
 - Admin sessions: GET /admin/sessions, DELETE /admin/sessions/:id
 - Both use LangGraph checkpointer for conversation persistence
 - Both save chat logs to MongoDB for observability
 """
 
+import base64
 import json
 import logging
 import time
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 from app.auth.middleware import authenticate_client, authenticate_admin
 from app.graph.client_agent import run_client_agent
 from app.graph.admin_agent import run_admin_agent
 from app.checkpointer import get_checkpointer
 from app.config import config
+from app.tools.file_processing import process_uploaded_file, format_file_context, build_multimodal_content, SUPPORTED_TYPES, MAX_FILE_SIZE_BYTES
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +95,42 @@ class ChatResponse(BaseModel):
 class AdminChatMessage(BaseModel):
     message: str
     thread_id: Optional[str] = None
+    files: Optional[List[dict]] = None  # Processed file data from frontend upload
+
+
+class FileUploadResponse(BaseModel):
+    files: List[dict]  # Processed file data
+
+
+@admin_router.post("/upload", response_model=FileUploadResponse)
+async def upload_files(
+    files: List[UploadFile] = File(...),
+    user: dict = Depends(authenticate_admin),
+):
+    """Upload files for chat attachment processing.
+
+    Accepts images (JPEG, PNG, GIF, WebP), PDFs, and text files.
+    Returns processed file data ready for inclusion in chat messages.
+    """
+    processed_files = []
+
+    for upload_file in files:
+        # Read file content
+        content = await upload_file.read()
+
+        # Validate size
+        if len(content) > MAX_FILE_SIZE_BYTES:
+            processed_files.append({
+                "error": f"File {upload_file.filename} too large ({len(content) / 1024 / 1024:.1f}MB). Max is 20MB.",
+                "filename": upload_file.filename,
+            })
+            continue
+
+        # Process the file
+        result = process_uploaded_file(content, upload_file.filename)
+        processed_files.append(result)
+
+    return FileUploadResponse(files=processed_files)
 
 
 # Client-facing agent (requires JWT auth — any role)
@@ -210,6 +249,7 @@ async def admin_chat_stream(body: AdminChatMessage, user: dict = Depends(authent
             body.message,
             thread_id,
             user_context=user,
+            files=body.files,
         )
         latency = (time.time() - start) * 1000
         await _save_chat_log(
