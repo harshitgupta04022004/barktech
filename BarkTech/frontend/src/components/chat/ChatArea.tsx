@@ -4,8 +4,13 @@ import { agentChatApi } from '@/api/agentChat';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { Composer } from '@/components/chat/Composer';
 import { EmptyState } from '@/components/chat/EmptyState';
+import type { ChatSettings } from '@/components/chat/ChatSettings';
 
-export function ChatArea() {
+interface ChatAreaProps {
+  settings?: ChatSettings;
+}
+
+export function ChatArea({ settings }: ChatAreaProps) {
   const {
     messages,
     isStreaming,
@@ -59,7 +64,7 @@ export function ChatArea() {
         onToolCall: (toolName, args) => {
           addToolCall(toolName, args);
         },
-      });
+      }, settings ? { model: settings.model, temperature: settings.temperature } : undefined);
 
       abortRef.current = handle.abort;
     },
@@ -71,6 +76,7 @@ export function ChatArea() {
       updateLastMessage,
       addToolCall,
       createThread,
+      settings,
     ]
   );
 

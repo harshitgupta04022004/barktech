@@ -5,9 +5,10 @@ interface ChatHeaderProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   onBack: () => void;
+  onOpenSettings: () => void;
 }
 
-export function ChatHeader({ sidebarOpen, onToggleSidebar, onBack }: ChatHeaderProps) {
+export function ChatHeader({ sidebarOpen, onToggleSidebar, onBack, onOpenSettings }: ChatHeaderProps) {
   const { activeThreadId, messages } = useChatStore();
 
   return (
@@ -42,7 +43,11 @@ export function ChatHeader({ sidebarOpen, onToggleSidebar, onBack }: ChatHeaderP
       </div>
 
       <div className="flex items-center gap-1">
-        <button className="p-1.5 rounded-md hover:bg-[#e5e0d6] dark:hover:bg-[#3d3a35] transition-colors">
+        <button
+          onClick={onOpenSettings}
+          className="p-1.5 rounded-md hover:bg-[#e5e0d6] dark:hover:bg-[#3d3a35] transition-colors"
+          title="Chat Settings"
+        >
           <Settings className="h-4 w-4 text-[#666] dark:text-[#999]" />
         </button>
       </div>

@@ -33,6 +33,12 @@ export interface AgentChatCallbacks {
   onToolCall?: (toolName: string, args: Record<string, unknown>) => void;
 }
 
+export interface ChatSettingsPayload {
+  model?: string;
+  temperature?: number;
+  streaming?: boolean;
+}
+
 export interface AgentChatHandle {
   abort: () => void;
 }
@@ -110,7 +116,8 @@ export const agentChatApi = {
   streamChat(
     message: string,
     threadId: string,
-    callbacks: AgentChatCallbacks
+    callbacks: AgentChatCallbacks,
+    settings?: ChatSettingsPayload
   ): AgentChatHandle {
     const abortController = new AbortController();
 
@@ -119,7 +126,7 @@ export const agentChatApi = {
         const response = await fetch(`${AGENT_BASE_URL}/admin/chat/stream`, {
           method: 'POST',
           headers: buildHeaders(),
-          body: JSON.stringify({ message, thread_id: threadId }),
+          body: JSON.stringify({ message, thread_id: threadId, ...settings }),
           signal: abortController.signal,
         });
 
