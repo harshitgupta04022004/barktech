@@ -1,4 +1,4 @@
-# Environment
+# Environment files
 .env
 .env.*
 !.env.example
@@ -37,3 +37,61 @@ coverage/
 *client_secret*
 *client_secret_*.json
 *googleusercontent*.json
+
+# === Security: API Keys, Tokens, Secrets ===
+
+# Environment & config files with secrets
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# API key files
+*.apikey
+*.api_key
+*api_key*.txt
+*api_key*.json
+*secret*.txt
+*secret*.json
+
+# OAuth & JWT files
+*oauth*.json
+*jwt*.json
+*token*.json
+
+# Certificate & key files
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.cert
+*.crt
+
+# Database credentials
+*credentials*.json
+*credentials*.txt
+*service_account*.json
+*service-account*.json
+
+# AWS / Cloud credentials
+*aws*.json
+*aws*.cfg
+.s3cfg
+.boto
+
+# Python
+*.egg-info/
+.pytest_cache/
+
+# Brevo / Mail API keys
+*brevo*.json
+*brevo*.txt
+
+# MCP tokens
+*mcp*token*.json
+*mcp*key*.json
+
+# Backblaze / S3
+*backblaze*.json
+*backblaze*.cfg
