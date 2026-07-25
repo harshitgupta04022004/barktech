@@ -185,14 +185,14 @@ class InvoicePDFService:
         gst_amount = subtotal * (gst_rate / 100)
         grand_total = subtotal + gst_amount
 
-        # Override with provided values if available
-        if "subtotal" in invoice_data:
+        # Override with provided values if available (skip None from model_dump)
+        if invoice_data.get("subtotal") is not None:
             subtotal = float(invoice_data["subtotal"])
-        if "gst_amount" in invoice_data:
+        if invoice_data.get("gst_amount") is not None:
             gst_amount = float(invoice_data["gst_amount"])
-        if "total" in invoice_data:
+        if invoice_data.get("total") is not None:
             grand_total = float(invoice_data["total"])
-        if "grand_total" in invoice_data:
+        if invoice_data.get("grand_total") is not None:
             grand_total = float(invoice_data["grand_total"])
 
         # Amount in words
@@ -281,13 +281,13 @@ class InvoicePDFService:
         gst_amount = subtotal * (gst_rate / 100)
         grand_total = subtotal + gst_amount
 
-        if "subtotal" in invoice_data:
+        if invoice_data.get("subtotal") is not None:
             subtotal = float(invoice_data["subtotal"])
-        if "gst_amount" in invoice_data:
+        if invoice_data.get("gst_amount") is not None:
             gst_amount = float(invoice_data["gst_amount"])
-        if "total" in invoice_data:
+        if invoice_data.get("total") is not None:
             grand_total = float(invoice_data["total"])
-        if "grand_total" in invoice_data:
+        if invoice_data.get("grand_total") is not None:
             grand_total = float(invoice_data["grand_total"])
 
         amount_in_words = data.get("amount_in_words", "")
