@@ -18,6 +18,7 @@ def build_reply_html():
     with open(path) as f:
         html = f.read()
 
+    # -- Simple {{variable}} replacements --
     data = {
         "{{logo_url}}": "https://barktechnologies.in/images/logo/logo.png",
         "{{inquiry_subject}}": "Automatic Capping Machine - Pricing & Lead Time",
@@ -34,11 +35,14 @@ def build_reply_html():
         "{{security_email}}": "security@barktechnologies.in",
         "{{attachment_name}}": "Product_Brochure_Capping_Machines.pdf",
         "{{attachment_url}}": "https://barktechnologies.in/docs/capping-brochure.pdf",
+        "{{feedback_yes_url}}": "https://barktechnologies.in/feedback/yes/BT-2026-0847",
+        "{{feedback_no_url}}": "https://barktechnologies.in/feedback/no/BT-2026-0847",
     }
 
     for k, v in data.items():
         html = html.replace(k, v)
 
+    # -- Replace reply paragraphs loop --
     paras = [
         "Thank you for your interest in our servo-based automatic capping machines, Gupta Enterprises team!",
         "For 3 units of our SBC-120 model (120 bottles/min throughput), the current pricing is Rs.35,000 per unit (ex-works Noida). Installation and commissioning at your Kanpur facility is included at no extra charge.",
@@ -47,7 +51,7 @@ def build_reply_html():
     ]
     paras_html = ""
     for p in paras:
-        paras_html += '<p style="margin: 0 0 12px; font-size: 14px; color: #444; line-height: 1.7;">' + p + '</p>\n'
+        paras_html += '          <p style="margin: 0 0 14px; font-size: 14px; color: #444; line-height: 1.7;">' + p + '</p>\n'
 
     loop_pattern = re.compile(
         r"<!-- \{\{#each reply_paragraphs\}\} -->.*?<!-- \{\{/each\}\} -->", re.DOTALL
@@ -56,6 +60,7 @@ def build_reply_html():
     if m:
         html = html[:m.start()] + paras_html + html[m.end():]
 
+    # -- Replace reply steps loop --
     steps = [
         {"num": "1", "text": "Confirm your order by replying to this email with a purchase order."},
         {"num": "2", "text": "Our accounts team will share a proforma invoice within 24 hours."},
@@ -63,7 +68,10 @@ def build_reply_html():
     ]
     steps_html = ""
     for s in steps:
-        steps_html += '<tr><td width="32" valign="top" style="padding: 4px 10px 4px 0;"><span style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;background-color:#e65100;color:#ffffff;font-size:12px;font-weight:700;border-radius:50%;">' + s["num"] + '</span></td><td valign="top" style="padding:4px 0;font-size:13px;color:#444;line-height:1.6;">' + s["text"] + '</td></tr>'
+        steps_html += '                  <tr>\n'
+        steps_html += '                    <td width="32" valign="top" style="padding: 4px 10px 4px 0;"><span style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;background-color:#e65100;color:#ffffff;font-size:12px;font-weight:700;border-radius:50%;">' + s["num"] + '</span></td>\n'
+        steps_html += '                    <td valign="top" style="padding:4px 0;font-size:13px;color:#444;line-height:1.6;">' + s["text"] + '</td>\n'
+        steps_html += '                  </tr>\n'
 
     steps_pattern = re.compile(
         r"<!-- \{\{#each reply_steps\}\} -->.*?<!-- \{\{/each\}\} -->", re.DOTALL
@@ -72,6 +80,7 @@ def build_reply_html():
     if m:
         html = html[:m.start()] + steps_html + html[m.end():]
 
+    # -- Replace ticket status if block --
     status_html = '<span style="display:inline-block;background-color:#e3f2fd;color:#1565c0;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;">&#9993; Awaiting Your Reply</span>'
     status_pattern = re.compile(
         r"<!-- \{\{#if ticket_status\}\} -->.*?<!-- \{\{/if\}\} -->", re.DOTALL
@@ -80,17 +89,38 @@ def build_reply_html():
     if m:
         html = html[:m.start()] + status_html + html[m.end():]
 
-    html = re.sub(r"<!--\s*\{\{.*?\}\}\s*-->", "", html)
+    # -- Clean remaining Handlebars comments --
+    html = re.sub(r"<!--\s*\{\{#if\s+\w+\}\}\s*-->", "", html)
+    html = re.sub(r"<!--\s*\{\{#if\s+\(eq.*?\)\}\}\s*-->", "", html)
+    html = re.sub(r"<!--\s*\{\{else if.*?\}\}\s*-->", "", html)
+    html = re.sub(r"<!--\s*\{\{else\}\}\s*-->", "", html)
+    html = re.sub(r"<!--\s*\{\{/if\}\}\s*-->", "", html)
     html = re.sub(r"\{\{#if\s+\w+\}\}", "", html)
     html = re.sub(r"\{\{/if\}\}", "", html)
+    html = re.sub(r"\{\{#if\s+\(eq.*?\)\}\}", "", html)
+    html = re.sub(r"\{\{else if.*?\}\}", "", html)
+    html = re.sub(r"\{\{else\}\}", "", html)
 
     return html
 
 
 async def main():
     html = build_reply_html()
-    result = await send_email(TO_EMAIL, "Re: Automatic Capping Machine - Pricing & Lead Time", html)
-    print(f"Result: {result}")
+
+    print(f"\n--- Template Rendering Check ---")
+    print(f"  'customer_name' present: {'Gupta Enterprises' in html}")
+    print(f"  'ticket_id' present: {'BT-2026-0847' in html}")
+    print(f"  Reply paragraphs present: {'SBC-120 model' in html}")
+    print(f"  Steps present: {'Confirm your order' in html}")
+    print(f"  Attachment reference present: {'Product_Brochure' in html}")
+    print(f"  Feedback present: {'Was this helpful' in html}")
+
+    result = await send_email(
+        TO_EMAIL,
+        "Re: Automatic Capping Machine - Pricing & Lead Time",
+        html,
+    )
+    print(f"\nResult: {result}")
 
 
 if __name__ == "__main__":

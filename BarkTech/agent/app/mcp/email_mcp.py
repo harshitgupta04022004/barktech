@@ -244,8 +244,15 @@ TEMPLATES["payment_reminder"] = _payment_reminder
 
 # ── Brevo API v3 Send Email ──────────────────────────────────
 
-async def _send_via_brevo(to: str, subject: str, html: str) -> dict:
-    """Send email using Brevo Transactional Email API v3."""
+async def _send_via_brevo(to: str, subject: str, html: str, attachments: list = None) -> dict:
+    """Send email using Brevo Transactional Email API v3 with optional attachments.
+
+    Args:
+        to: Recipient email address.
+        subject: Email subject line.
+        html: HTML body content.
+        attachments: Optional list of dicts: {"filename": str, "content": str (base64), "contentType": str}
+    """
     import httpx
 
     url = f"{BREVO_API_URL}/smtp/email"
@@ -260,6 +267,18 @@ async def _send_via_brevo(to: str, subject: str, html: str) -> dict:
         "subject": subject,
         "htmlContent": html,
     }
+    if attachments:
+        # Brevo API requires "name" not "filename" for attachments
+        brevo_attachments = []
+        for att in attachments:
+            brevo_att = {
+                "name": att.get("filename", att.get("name", "file")),
+                "content": att.get("content", ""),
+            }
+            if "contentType" in att:
+                brevo_att["contentType"] = att["contentType"]
+            brevo_attachments.append(brevo_att)
+        payload["attachment"] = brevo_attachments
 
     try:
         async with httpx.AsyncClient(timeout=30) as client:
@@ -285,17 +304,42 @@ async def _send_via_brevo(to: str, subject: str, html: str) -> dict:
 
 # ── SMTP Fallback ──────────────────────────────────────────
 
-async def _send_via_smtp(to: str, subject: str, html: str) -> dict:
-    """Send email using Python smtplib (synchronous, run in executor)."""
+async def _send_via_smtp(to: str, subject: str, html: str, attachments: list = None) -> dict:
+    """Send email using Python smtplib with MIME attachment support.
+
+    Args:
+        to: Recipient email address.
+        subject: Email subject line.
+        html: HTML body content.
+        attachments: Optional list of dicts: {"filename": str, "content": bytes|str, "contentType": str}
+    """
     import asyncio
     import smtplib
+    from email.mime.base import MIMEBase
 
     def _smtp_send():
-        msg = MIMEMultipart("alternative")
+        msg = MIMEMultipart("mixed")
         msg["From"] = f"{EMAIL_FROM_NAME} <{EMAIL_FROM or SMTP_USER}>"
         msg["To"] = to
         msg["Subject"] = subject
         msg.attach(MIMEText(html, "html", "utf-8"))
+
+        if attachments:
+            for att in attachments:
+                import base64
+                from email import encoders
+                part = MIMEBase("application", "octet-stream")
+                content = att.get("content")
+                if isinstance(content, str):
+                    content = base64.b64decode(content)
+                part.set_payload(content)
+                encoders.encode_base64(part)
+                part.add_header(
+                    "Content-Disposition",
+                    f'attachment; filename="{att.get("filename", "file")}"',
+                )
+                msg.attach(part)
+
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as server:
             server.ehlo()
             if SMTP_PORT != 465:
@@ -316,19 +360,24 @@ async def _send_via_smtp(to: str, subject: str, html: str) -> dict:
 
 # ── Public API ──────────────────────────────────────────────
 
-async def send_email(to: str, subject: str, html: str) -> dict:
+async def send_email(to: str, subject: str, html: str, attachments: list = None) -> dict:
     """Send a raw HTML email via Brevo API (primary) or SMTP (fallback).
 
+    Args:
+        to: Recipient email address.
+        subject: Email subject line.
+        html: HTML body content.
+        attachments: Optional list of file attachments. Each dict:
+            - filename (str): e.g. "Invoice_BARK-INV-2026-0042.pdf"
+            - content (str|bytes): Base64 string (Brevo) or raw bytes (SMTP)
+            - contentType (str): e.g. "application/pdf"
+
     Priority: Brevo API > SMTP.
-    Reason: Brevo API handles sender authentication internally and replaces
-    free-email senders (@gmail.com) with Brevo's own authenticated sender,
-    avoiding Gmail/Yahoo DMARC rejection. SMTP with a Gmail sender via
-    third-party relay will silently fail due to DMARC enforcement.
     """
     # ── Primary: Brevo API v3 ──────────────────────────────
     if BREVO_API_KEY:
         logger.info(f"Attempting Brevo API send to={to}")
-        result = await _send_via_brevo(to, subject, html)
+        result = await _send_via_brevo(to, subject, html, attachments=attachments)
         if result["success"]:
             return result
         logger.warning(f"Brevo API failed: {result.get('error')}, trying SMTP fallback")
@@ -343,7 +392,7 @@ async def send_email(to: str, subject: str, html: str) -> dict:
                 "Gmail/Yahoo DMARC policy may reject delivery. Use Brevo API or a custom domain."
             )
         logger.info(f"Attempting SMTP send to={to} via {SMTP_HOST}:{SMTP_PORT}")
-        result = await _send_via_smtp(to, subject, html)
+        result = await _send_via_smtp(to, subject, html, attachments=attachments)
         if result["success"]:
             return result
         logger.error(f"SMTP also failed: {result.get('error')}")
