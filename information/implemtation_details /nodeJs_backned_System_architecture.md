@@ -879,7 +879,18 @@ Each line item has gst_rate. Amount = quantity × unit_price. GST per item = amo
 
 ### Amount in Words
 
-Converts total amount to Indian numbering system: lakhs and crores. Example: ₹1,25,000 → "One Lakh Twenty Five Thousand Rupees Only". Generated automatically when invoice is saved.
+Converts total amount to Indian numbering system: crores, lakhs, thousands, and below. Supports amounts from ₹0 up to ₹9,99,99,99,999.99 (999 crore 99 lakh 99 thousand 999 rupees 99 paise).
+
+**Format**: "One Crore Twenty Five Lakh Thirty Four Thousand Five Hundred Sixty Seven Rupees and Eighty Nine Paise Only"
+
+| Range | Example | Conversion |
+|-------|---------|------------|
+| < 1,000 | ₹999 | "Nine Hundred Ninety Nine Rupees Only" |
+| 1,000 - 99,999 | ₹45,678 | "Forty Five Thousand Six Hundred Seventy Eight Rupees Only" |
+| 1,00,000 - 99,99,999 | ₹12,34,567 | "Twelve Lakh Thirty Four Thousand Five Hundred Sixty Seven Rupees Only" |
+| 1,00,00,000 - 99,99,99,999 | ₹4,56,78,901 | "Four Crore Fifty Six Lakh Seventy Eight Thousand Nine Hundred One Rupees Only" |
+
+Generated automatically when invoice is saved. Uses Indian numbering system with commas placed according to Indian standards (first comma after 3 digits, then every 2 digits).
 
 ### Bank Details
 
@@ -2289,7 +2300,286 @@ Core catalog / invoice / FAQ stay **native LangGraph tools** (not MCP). No payme
 
 
 
-## 27. Implementation Roadmap
+## 27. Scenario & Story Flows
+
+This section describes complete user interaction scenarios showing how the Node.js backend processes requests for every major operation. Each scenario follows a request from the frontend/agent to the database response.
+
+---
+
+### 27.1 Content Management Scenarios
+
+#### Scenario: Creating Content via Admin Form
+
+**Story Flow:**
+
+1. **Admin navigates to Content > Blog Post > Create.**
+
+2. **Frontend sends:** `POST /api/v1/content` with `content_type: "blog"`, `title`, `body`, `product_id`, `tags`.
+
+3. **Backend validates:**
+   - Title is present (required)
+   - At least one of `product_id` OR `page_slug` is provided
+   - If `content_type: "installation"`, `product_id` is required
+
+4. **Backend writes to `blog_posts` collection** with `review_status: "draft"`, `created_via: "admin_form"`.
+
+5. **Backend logs audit event:** `audit_logs` records `action: "create"`, `resource_type: "blog_post"`, `details: {title, content_type, created_via}`.
+
+6. **Backend returns:** `{id, title, slug, review_status: "draft"}`.
+
+7. **Frontend shows:** Blog post appears in the Content list with "Draft" badge.
+
+---
+
+#### Scenario: Creating Content via AI Agent
+
+**Story Flow:**
+
+1. **Admin asks agent to draft content in chat.**
+
+2. **Agent calls `create_content` tool** which sends `POST /api/v1/content` with `created_via: "agent_chat"`.
+
+3. **Backend processes identically** to admin form creation, but with `created_via: "agent_chat"`.
+
+4. **Backend returns the content** to the agent.
+
+5. **Agent presents `InlineContentCard`** in the chat for admin review.
+
+6. **Admin clicks "Submit for Review" on the card.**
+
+7. **Frontend sends:** `PATCH /api/v1/content/:id/review` with `review_status: "in_review"`.
+
+8. **Backend validates the state transition:** `draft` → `in_review` is allowed.
+
+9. **Backend updates `blog_posts.review_status`** to `"in_review"`.
+
+---
+
+#### Scenario: Review and Approval Workflow
+
+**Story Flow:**
+
+1. **Admin (reviewer) opens the Content list** and sees items with `review_status: "in_review"`.
+
+2. **Admin clicks "Approve" on a case study.**
+
+3. **Frontend sends:** `POST /api/v1/content/:id/approve`.
+
+4. **Backend validates:**
+   - Current status is `in_review`
+   - Reviewer is NOT the creator (self-approval blocked for audit clarity)
+
+5. **Backend updates `case_studies.review_status`** to `"approved"`.
+
+6. **Backend logs audit event:** `audit_logs` records `action: "approve"`, `resource_type: "case_study"`.
+
+7. **Frontend shows:** Case study badge changes from yellow (in_review) to green (approved).
+
+---
+
+#### Scenario: Rejection with Reason
+
+**Story Flow:**
+
+1. **Admin rejects a news article.**
+
+2. **Frontend sends:** `POST /api/v1/content/:id/reject` with `reason: "Content needs more specific data about the installation metrics."`.
+
+3. **Backend validates:** Reason is provided (required for rejection).
+
+4. **Backend updates `news_articles`:** `review_status: "rejected"`, `review_notes: "Content needs more specific data..."`.
+
+5. **Backend logs audit event.**
+
+6. **Frontend shows:** Rejection reason displayed prominently at the top of the edit form as a banner.
+
+7. **Admin edits the draft** and resubmits. `review_status` transitions from `rejected` → `draft` → `in_review`.
+
+---
+
+### 27.2 Social Media Publishing Scenarios
+
+#### Scenario: Publishing to Multiple Platforms
+
+**Story Flow:**
+
+1. **Admin selects an approved content post** and clicks "Publish."
+
+2. **Frontend shows platform checkboxes:** LinkedIn, Facebook, Instagram, Twitter.
+
+3. **Admin selects LinkedIn and Facebook** and clicks "Confirm."
+
+4. **Frontend sends:** `POST /api/v1/social/publish` with `content_post_id`, `platforms: ["linkedin", "facebook"]`.
+
+5. **Backend validates:**
+   - `content_posts.review_status == "approved"` (rejects drafts/rejected)
+   - Pre-validates per platform:
+     - LinkedIn: Content length OK
+     - Facebook: Access token present
+
+6. **Backend creates `social_publish_logs` rows:**
+   - LinkedIn row: `status: "queued"`, `idempotency_key: SHA256(content_post_id + "linkedin" + 1)`
+   - Facebook row: `status: "queued"`, `idempotency_key: SHA256(content_post_id + "facebook" + 1)`
+
+7. **Backend dispatches platform calls independently** via BullMQ with per-platform concurrency limits.
+
+8. **As each resolves:**
+   - LinkedIn: `status: "published"`, `platform_post_id: "urn:li:share:12345"`
+   - Facebook: `status: "published"`, `platform_post_id: "123456789"`
+
+9. **Backend marks `content_posts.review_status = "published"`** once at least one platform succeeds.
+
+10. **Backend returns per-platform breakdown** to the frontend.
+
+11. **Frontend shows:** Status icons update from "queued" (gray) to "published" (green) in real-time.
+
+---
+
+#### Scenario: Platform Pre-Validation Failure
+
+**Story Flow:**
+
+1. **Admin tries to publish a long caption to Twitter.**
+
+2. **Backend pre-validates:** Caption is 342 characters, Twitter limit is 280.
+
+3. **Backend returns 400:** "Caption exceeds 280 character limit for X/Twitter."
+
+4. **Frontend shows:** Inline error message on the Twitter checkbox: "Caption too long (342/280 chars). Shorten before posting."
+
+5. **Admin shortens the caption** and retries.
+
+---
+
+#### Scenario: Scheduled Publishing
+
+**Story Flow:**
+
+1. **Admin sets `scheduled_at` on an approved content post** via the publish flow.
+
+2. **Backend stores `scheduled_at`** in `content_posts` collection.
+
+3. **BullMQ scheduler runs every 60 seconds:**
+   - Queries `content_posts` where `review_status = "approved"` AND `scheduled_at <= now()`
+   - For each due post, triggers the same publish logic as immediate request
+
+4. **If the post was reverted to `in_review` after scheduling:** Scheduler skips it and logs a `missed_schedule` audit event.
+
+5. **At scheduled time:** Publish flow executes, creating `social_publish_logs` rows.
+
+---
+
+#### Scenario: Webhook Confirmation
+
+**Story Flow:**
+
+1. **Platform confirms publish asynchronously** via webhook.
+
+2. **Backend receives webhook** at `POST /api/v1/webhooks/publish/confirm`.
+
+3. **Backend matches the webhook** to `social_publish_logs` via `platform_post_id` or `idempotency_key`.
+
+4. **Backend updates status** to `"published"` with the confirmed post URL.
+
+5. **If no webhook arrives within 15 minutes:** Backend marks status as `"unknown"` (needs manual check).
+
+---
+
+### 27.3 Email Automation Scenarios
+
+#### Scenario: Ad-Hoc Email Send
+
+**Story Flow:**
+
+1. **Admin (or agent) requests an ad-hoc email send.**
+
+2. **Frontend/agent sends:** `POST /api/v1/email/adhoc/send` with `subject`, `body`, `segment_filter`.
+
+3. **Backend resolves the segment:**
+   - Queries `email_subscribers` with the filter
+   - Excludes `status: "unsubscribed"` and `status: "bounced"`
+   - Returns resolved count
+
+4. **Backend returns preview:** Recipient count, subject, body preview (first 200 chars).
+
+5. **Admin/agent confirms with `confirm: true`.**
+
+6. **Backend processes the send:**
+   - Creates `email_sequence_logs` rows for each recipient with `send_type: "ad_hoc"`
+   - Sends emails via Resend MCP
+   - Logs audit event
+
+7. **Backend returns:** `{sent: 336, bounced: 2, total: 338}`.
+
+---
+
+#### Scenario: Segment Resolution with Exclusions
+
+**Story Flow:**
+
+1. **Request comes in:** "Send to all subscribers interested in shrink sleeve machines."
+
+2. **Backend queries `email_subscribers`:** Finds 500 matching subscribers.
+
+3. **Backend excludes:** 30 unsubscribed, 12 bounced. Resolved: 458.
+
+4. **Backend returns preview:** "458 active subscribers (42 excluded)."
+
+5. **If `confirm` is false:** Returns preview only, does not send.
+
+6. **If `confirm` is true:** Proceeds with send to 458 recipients.
+
+---
+
+### 27.4 Audit Logging Scenarios
+
+#### Scenario: Content CRUD Audit Trail
+
+**Story Flow:**
+
+1. **Admin creates a blog post** via form or agent.
+
+2. **Backend writes `audit_logs`:** `action: "create"`, `resource_type: "blog_post"`, `resource_id: <id>`, `details: {title, content_type, created_via}`.
+
+3. **Admin edits the post.**
+
+4. **Backend writes `audit_logs`:** `action: "update"`, `resource_type: "blog_post"`, `details: {before: {...}, after: {...}}`.
+
+5. **Admin approves the post.**
+
+6. **Backend writes `audit_logs`:** `action: "approve"`, `resource_type: "blog_post"`, `details: {review_status: "approved"}`.
+
+7. **Admin publishes to social media.**
+
+8. **Backend writes `audit_logs`:** `action: "publish"`, `resource_type: "social_publish"`, `details: {platforms: [{platform: "linkedin", status: "published"}, {platform: "facebook", status: "published"}]}`.
+
+9. **Admin views audit log** in the dashboard. Full trail of every action is visible.
+
+---
+
+### 27.5 Scheduled Publishing Scenarios
+
+#### Scenario: BullMQ Scheduler Processes Due Posts
+
+**Story Flow:**
+
+1. **Content post is approved with `scheduled_at: "2026-07-28T09:00:00Z"`.**
+
+2. **Scheduler runs every 60 seconds.**
+
+3. **At 9:00 AM UTC on July 28:** Scheduler finds the post where `review_status = "approved"` AND `scheduled_at <= now()`.
+
+4. **Scheduler triggers publish flow:**
+   - Creates `social_publish_logs` rows for each platform
+   - Dispatches platform API calls
+
+5. **If the post was reverted to `in_review`:** Scheduler skips it and logs `missed_schedule`.
+
+6. **If publish succeeds:** `content_posts.review_status` changes to `"published"`.
+
+---
+
+## 28. Implementation Roadmap
 
 
 
@@ -2370,6 +2660,169 @@ Unit tests (service layer), integration tests (API endpoints), E2E tests (critic
 
 ---
 
-*Document version: 1.0 | Last updated: 2026-07-17*
+*Document version: 1.1 | Last updated: 2026-07-25*
 *See also:* `python_ai_agent_architecture.md` *for the AI agent layer*
 *See also:* `databse_schema.txt` *for complete database schema*
+
+---
+
+## Completed Implementation Status
+
+> Last updated: 2026-07-25
+
+This section documents all work that has been **implemented and verified** in the Node.js backend.
+
+### Core Server
+
+| Component | Status | File(s) |
+|-----------|--------|---------|
+| **Fastify Server** | Completed | `src/server.ts` |
+| **MongoDB Connection (Atlas)** | Completed | `src/config/env.ts` |
+| **Redis Connection (Upstash)** | Completed | `src/config/env.ts` |
+| **Environment Config** | Completed | `src/config/env.ts` |
+| **JWT Auth (access + refresh)** | Completed | `src/middleware/auth.ts` |
+| **RBAC Middleware** | Completed | `src/middleware/rbac.ts` |
+| **Zod Validation** | Completed | `src/middleware/validate.ts` |
+| **Pino Logger** | Completed | `src/config/env.ts` |
+
+### Modules Implemented
+
+| Module | Status | Route File | Controller | Service | Model |
+|--------|--------|------------|------------|---------|-------|
+| **Auth** | Completed | `src/routes/auth.ts` | `auth.controller.ts` | `auth.service.ts` | `user.ts` |
+| **Products** | Completed | `src/routes/products.ts` | `product.controller.ts` | `product.service.ts` | `product.ts` |
+| **Leads/RFQ** | Completed | `src/routes/leads.ts` | `lead.controller.ts` | `lead.service.ts` | `lead.ts` |
+| **Invoices** | Completed | `src/routes/invoices.ts` | `invoice.controller.ts` | `invoice.service.ts` | `invoice.ts` |
+| **Stock/Inventory** | Completed | `src/routes/stock.ts` | `stock.controller.ts` | `stock.service.ts` | `stock.ts` |
+| **Email** | Completed | `src/routes/email.ts` | `email.controller.ts` | `email.service.ts` | — |
+| **Content/CMS** | Completed | `src/routes/content.ts` | `content.controller.ts` | `content.service.ts` | `contentPost.ts` |
+| **Content Posts** | Completed | `src/routes/contentPosts.ts` | `contentPost.controller.ts` | — | `contentPost.ts` |
+| **Media (S3)** | Completed | `src/routes/media.ts` | — | — | — |
+| **Chat Observability** | Completed | `src/routes/chat_observability.ts` | — | `chatLog.service.ts` | `chatLog.ts` |
+| **Settings** | Completed | `src/routes/settings.ts` | — | — | — |
+| **Webhooks** | Completed | `src/routes/webhooks.ts` | `webhook.controller.ts` | — | — |
+| **Live Showcase** | Completed | `src/routes/liveShowcase.ts` | — | — | — |
+
+### New Files Added (This Session)
+
+| File | Purpose |
+|------|---------|
+| `src/routes/media.ts` | S3/Backblaze B2 operations — presigned URLs, file listing, existence check, deletion |
+| `src/routes/content.ts` | Content management routes (blog, news, case studies) |
+| `src/routes/contentPosts.ts` | Content post management routes |
+| `src/routes/webhooks.ts` | Webhook handler for external integrations |
+| `src/routes/liveShowcase.ts` | Live showcase data endpoint |
+| `src/routes/settings.ts` | Application settings routes |
+| `src/controllers/content.controller.ts` | Content CRUD controller |
+| `src/controllers/contentPost.controller.ts` | Content post controller |
+| `src/controllers/webhook.controller.ts` | Webhook processing controller |
+| `src/services/scheduler.service.ts` | Background task scheduler (BullMQ) |
+| `src/models/contentPost.ts` | Content post Mongoose model |
+
+### S3 / Backblaze B2 Integration
+
+**File Storage** uses Backblaze B2 (S3-compatible) for all media and PDFs:
+
+- **Presigned URLs**: `POST /api/v1/media/presign` generates time-limited upload URLs
+- **File Listing**: `GET /api/v1/media/list?prefix=...` lists files in a bucket
+- **Existence Check**: `GET /api/v1/media/exists?key=...` checks if a file exists
+- **File Download**: `GET /api/v1/media/file?key=...` returns the file or redirect
+- **File Deletion**: `DELETE /api/v1/media/delete?key=...` removes a file
+
+**Public URL format**: `https://<endpoint>/<bucket>/<key>` (Backblaze B2 format)
+
+**Dependencies installed**: `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`
+
+### Agent Event Integration
+
+The backend subscribes to agent responses via Redis Pub/Sub:
+
+**File**: `src/services/agentEvent.service.ts`
+
+- Subscribes to `agent:response:*` channels on Redis
+- Processes agent responses for events (LeadCreated, InvoicePaid, etc.)
+- Updates MongoDB records based on agent actions
+- Logs agent responses to chat observability
+
+### Chat Observability
+
+**Routes**: `src/routes/chat_observability.ts`
+**Service**: `src/services/chatLog.service.ts`
+**Model**: `src/models/chatLog.ts`
+
+Tracks:
+- Chat sessions and turn history
+- Tool call logs (tool name, input, output, latency)
+- Token usage and cost tracking
+- Agent response times
+
+### Scheduler Service
+
+**File**: `src/services/scheduler.service.ts`
+
+Background job processing via BullMQ + Redis:
+- Social media content publishing queue
+- Email sequence scheduling
+- Content post scheduling for future publishing
+
+### Social Publishing Logs
+
+**Model**: `src/models/socialPublishLog.ts`
+
+Per-platform publication records with:
+- Idempotency keys (SHA-256 of content_post_id + platform + attempt)
+- Status tracking (queued → publishing → published/failed)
+- Retry logic with error categorization
+- Platform post IDs and URLs
+
+### Cloud Database Connections
+
+| Service | Provider | Connection | Status |
+|---------|----------|------------|--------|
+| **MongoDB** | MongoDB Atlas | `MONGODB_URI` from `.env` | Connected |
+| **Redis** | Upstash Redis Cloud | `REDIS_URL` from `.env` | Connected |
+| **S3** | Backblaze B2 | `S3_ENDPOINT_URL` + credentials | Connected |
+
+### Environment Variables (.env)
+
+```bash
+# Database
+MONGODB_URI=mongodb+srv://...
+REDIS_URL=rediss://...
+
+# S3 (Backblaze B2)
+S3_ENDPOINT_URL=https://s3.us-east-005.backblazeb2.com
+S3_BUCKET=barktech-media
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+
+# Auth
+JWT_SECRET=...
+JWT_REFRESH_SECRET=...
+
+# Email (Brevo SMTP)
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=b341f9001@smtp-brevo.com
+SMTP_PASS=xsmtpsib-...
+EMAIL_FROM=harshitgupta040204@gmail.com
+EMAIL_FROM_NAME=Bark Technologies
+
+# Agent
+AGENT_URL=http://localhost:8000
+```
+
+### What's Working End-to-End
+
+1. **Authentication**: Login, register, JWT refresh, RBAC middleware — all functional
+2. **Product CRUD**: Create, read, update, delete products with categories, specs, media
+3. **Invoice CRUD**: Create invoices with line items, GST calculation, PDF generation
+4. **Lead/RFQ Management**: Submit inquiries, assign leads, track status
+5. **Stock/Inventory**: Track stock levels, log changes, low-stock alerts
+6. **Content Management**: Blog posts, news articles, case studies with review workflow
+7. **Email Sending**: Via Brevo SMTP relay (primary) + Brevo API (fallback)
+8. **S3 File Upload**: Presigned URLs for direct upload to Backblaze B2
+9. **Chat Observability**: Track agent conversations, tool calls, token usage
+10. **Agent Event Processing**: Subscribe to agent responses via Redis Pub/Sub
+11. **Scheduler**: Background job processing for social media publishing
+12. **Webhook Handling**: External integration webhooks

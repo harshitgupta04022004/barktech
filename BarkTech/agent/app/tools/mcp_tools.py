@@ -1,11 +1,18 @@
-"""MCP tools wrapped as LangGraph @tools for the admin multi-agent system."""
+"""MCP tools wrapped as LangGraph @tools for the admin multi-agent system.
+
+Tool categories (per v2 architecture):
+- whatsapp_tools: WhatsApp notifications via WhatsApp MCP
+- email_tools: Email sending via Email MCP (Resend)
+- media_tools: S3/R2 media management via Media MCP
+- web_research_tools: DuckDuckGo web research
+- canvas_tools: Creative design generation via Canvas MCP
+"""
 
 from langchain_core.tools import tool
 from app.mcp.whatsapp_mcp import send_notification as _send_notification, send_admin_alert as _send_admin_alert
 from app.mcp.email_mcp import send_email as _send_email, send_template_email as _send_template_email
 from app.mcp.media_mcp import presign_upload as _presign_upload, get_public_url as _get_public_url, list_objects as _list_objects
 from app.mcp.web_research_mcp import fetch_url as _fetch_url, search_web as _search_web
-from app.mcp.claude_ads_mcp import create_campaign as _create_campaign, publish_post as _publish_post, get_campaign_stats as _get_campaign_stats
 from app.mcp.canvas_mcp import generate_design as _generate_design, export_asset as _export_asset
 
 
@@ -33,7 +40,7 @@ async def send_admin_whatsapp_alert(message_type: str, details: dict) -> dict:
 
 @tool
 async def send_email(to: str, subject: str, html: str) -> dict:
-    """Send a transactional email via Resend.
+    """Send a transactional email via Brevo API v3 (with SMTP fallback).
 
     Args:
         to: Recipient email address.
@@ -45,9 +52,9 @@ async def send_email(to: str, subject: str, html: str) -> dict:
 
 @tool
 async def send_template_email(to: str, template: str, variables: dict) -> dict:
-    """Send a templated email using a predefined Bark template.
+    """Send a templated email using a predefined Bark template (via Brevo API v3).
 
-    Available templates: inquiry_acknowledgement, invoice, quote.
+    Available templates: inquiry_acknowledgement, invoice, quote, payment_reminder, product_inquiry.
 
     Args:
         to: Recipient email address.
@@ -101,54 +108,6 @@ async def research_web_search(query: str, limit: int = 5) -> list:
 
 
 @tool
-async def create_ad_campaign(
-    name: str,
-    platform: str,
-    budget: float,
-    target_audience: str = "",
-    content: str = "",
-) -> dict:
-    """Create a new ad campaign on social media.
-
-    Args:
-        name: Campaign name.
-        platform: Target platform (facebook, instagram, linkedin, twitter, reddit).
-        budget: Campaign budget in INR.
-        target_audience: Target audience description.
-        content: Ad content/copy.
-    """
-    return await _create_campaign(name, platform, budget, target_audience, content)
-
-
-@tool
-async def publish_social_post(
-    platform: str,
-    content: str,
-    media_urls: list = None,
-    scheduled_time: str = None,
-) -> dict:
-    """Publish a post to social media.
-
-    Args:
-        platform: Target platform (facebook, instagram, linkedin, twitter, reddit).
-        content: Post text content.
-        media_urls: Optional list of media URLs to include.
-        scheduled_time: Optional ISO timestamp for scheduled publishing.
-    """
-    return await _publish_post(platform, content, media_urls, scheduled_time)
-
-
-@tool
-async def get_ad_campaign_stats(campaign_id: str = "") -> dict:
-    """Get ad campaign performance statistics.
-
-    Args:
-        campaign_id: Optional specific campaign ID. If empty, returns all campaigns.
-    """
-    return await _get_campaign_stats(campaign_id or None)
-
-
-@tool
 async def generate_creative_design(
     prompt: str,
     design_type: str = "product_creative",
@@ -185,7 +144,6 @@ async def export_design_asset(
 whatsapp_tools = [send_whatsapp_notification, send_admin_whatsapp_alert]
 email_tools = [send_email, send_template_email]
 media_tools = [presign_media_upload, get_media_public_url]
-web_research_tools = [research_url, research_web_search]
-ads_tools = [create_ad_campaign, publish_social_post, get_ad_campaign_stats]
-canvas_tools = [generate_creative_design, export_design_asset]
-all_mcp_tools = whatsapp_tools + email_tools + media_tools + web_research_tools + ads_tools + canvas_tools
+web_research_tools = [research_url, research_web_search]  # DuckDuckGo MCP
+canvas_tools = [generate_creative_design, export_design_asset]  # Canvas MCP
+all_mcp_tools = whatsapp_tools + email_tools + media_tools + web_research_tools + canvas_tools

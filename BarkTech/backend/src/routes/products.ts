@@ -14,6 +14,9 @@ export async function productRoutes(app: FastifyInstance) {
   app.put('/:id', { preHandler: [authenticate, requireRole('super_admin', 'admin')] }, productController.update);
   app.delete('/:id', { preHandler: [authenticate, requireRole('super_admin')] }, productController.delete);
 
+  // Admin — AI-enhanced product creation with file upload
+  app.post('/create-with-ai', { preHandler: [authenticate, requireRole('super_admin', 'admin')] }, productController.createWithAI);
+
   // Admin — Categories
   app.post('/categories', { preHandler: [authenticate, requireRole('super_admin', 'admin')] }, productController.createCategory);
 

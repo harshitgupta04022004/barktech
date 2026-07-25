@@ -133,7 +133,7 @@ export function DataTable<TData>({
       {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 " />
           <Input
             placeholder={searchPlaceholder}
             value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? globalFilter}
@@ -145,7 +145,7 @@ export function DataTable<TData>({
                 setGlobalFilter(val);
               }
             }}
-            className="pl-9 dark:bg-gray-800 dark:border-gray-600"
+            className="pl-9  "
           />
           {((searchKey && table.getColumn(searchKey)?.getFilterValue()) || globalFilter) && (
             <button
@@ -156,7 +156,7 @@ export function DataTable<TData>({
                   setGlobalFilter('');
                 }
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 "
             >
               <X className="h-4 w-4" />
             </button>
@@ -168,15 +168,15 @@ export function DataTable<TData>({
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+              className="gap-1.5   "
               onClick={() => setShowColumnSettings(!showColumnSettings)}
             >
               <Settings2 className="h-4 w-4" />
               Columns
             </Button>
             {showColumnSettings && (
-              <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white p-3 shadow-lg dark:border-gray-700 dark:bg-gray-900">
-                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white p-3 shadow-lg  ">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 ">
                   Toggle Columns
                 </p>
                 {table
@@ -188,7 +188,7 @@ export function DataTable<TData>({
                   .map((column) => (
                     <label
                       key={column.id}
-                      className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
+                      className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm text-gray-700 hover:bg-gray-50  "
                     >
                       <input
                         type="checkbox"
@@ -206,7 +206,7 @@ export function DataTable<TData>({
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="gap-1.5   "
             onClick={handleExport}
           >
             <Download className="h-4 w-4" />
@@ -221,7 +221,7 @@ export function DataTable<TData>({
           <span>{Object.keys(rowSelection).length} row(s) selected</span>
           <button
             onClick={() => setRowSelection({})}
-            className="text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="text-gray-500 underline hover:text-gray-700  "
           >
             Clear selection
           </button>
@@ -229,7 +229,7 @@ export function DataTable<TData>({
       )}
 
       {/* Table */}
-      <Card className="dark:border-gray-800 dark:bg-gray-900">
+      <Card className=" ">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -237,12 +237,12 @@ export function DataTable<TData>({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr
                     key={headerGroup.id}
-                    className="border-b border-gray-200 dark:border-gray-800"
+                    className="border-b border-gray-200 "
                   >
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
-                        className="whitespace-nowrap bg-gray-50 px-4 py-3 text-left font-medium text-gray-500 dark:bg-gray-800/50 dark:text-gray-400"
+                        className="whitespace-nowrap bg-gray-50 px-4 py-3 text-left font-medium text-gray-500 /50 "
                       >
                         {header.isPlaceholder ? null : header.column.getCanSort() ? (
                           <DataTableColumnHeader
@@ -267,7 +267,7 @@ export function DataTable<TData>({
                   <tr>
                     <td
                       colSpan={columns.length}
-                      className="h-24 text-center text-gray-500 dark:text-gray-400"
+                      className="h-24 text-center text-gray-500 "
                     >
                       No results found.
                     </td>
@@ -276,12 +276,12 @@ export function DataTable<TData>({
                   table.getRowModel().rows.map((row) => (
                     <tr
                       key={row.id}
-                      className="border-b border-gray-100 transition-colors hover:bg-gray-50/50 dark:border-gray-800/50 dark:hover:bg-gray-800/30"
+                      className="border-b border-gray-100 transition-colors hover:bg-gray-50/50 /50 /30"
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td
                           key={cell.id}
-                          className="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-gray-300"
+                          className="whitespace-nowrap px-4 py-3 text-gray-700 "
                         >
                           {flexRender(
                             cell.column.columnDef.cell,

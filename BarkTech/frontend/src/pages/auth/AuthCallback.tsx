@@ -41,10 +41,10 @@ export function AuthCallback() {
   }, [searchParams, navigate, login]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-400">Signing you in with Google...</p>
+        <p className="text-muted-foreground">Signing you in with Google...</p>
       </div>
     </div>
   );

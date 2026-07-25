@@ -181,11 +181,11 @@ Interested in our Automatic Flute Laminator? Contact us for a demonstration!`,
 ];
 
 const categoryColors: Record<string, string> = {
-  Consignment: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-  Installation: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-  Events: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-  'Company News': 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-  'Product Launch': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+  Consignment: 'bg-blue-100 text-blue-700',
+  Installation: 'bg-green-100 text-green-700',
+  Events: 'bg-purple-100 text-purple-700',
+  'Company News': 'bg-orange-100 text-orange-700',
+  'Product Launch': 'bg-yellow-100 text-yellow-700',
 };
 
 export function NewsDetailPage() {
@@ -195,7 +195,7 @@ export function NewsDetailPage() {
   if (!item) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold mb-4 text-black dark:text-white">Article Not Found</h1>
+        <h1 className="text-2xl font-bold mb-4 text-foreground">Article Not Found</h1>
         <Link to="/news">
           <Button variant="outline"><ArrowLeft className="h-4 w-4" /> Back to News</Button>
         </Link>
@@ -208,7 +208,7 @@ export function NewsDetailPage() {
   const renderContent = (content: string) => {
     return content.split('\n\n').map((block, i) => {
       if (block.startsWith('## ')) {
-        return <h2 key={i} className="text-xl font-bold text-black dark:text-white mt-8 mb-4">{block.replace('## ', '')}</h2>;
+        return <h2 key={i} className="text-xl font-bold text-foreground mt-8 mb-4">{block.replace('## ', '')}</h2>;
       }
       if (block.startsWith('- **')) {
         const items = block.split('\n').filter(Boolean);
@@ -218,11 +218,11 @@ export function NewsDetailPage() {
               const text = li.replace(/^- /, '');
               const boldMatch = text.match(/\*\*(.*?)\*\*(.*)/);
               return (
-                <li key={j} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                <li key={j} className="flex items-start gap-2 text-foreground">
                   <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
                   <span>
                     {boldMatch ? (
-                      <><strong className="text-black dark:text-white">{boldMatch[1]}</strong>{boldMatch[2]}</>
+                      <><strong className="text-foreground">{boldMatch[1]}</strong>{boldMatch[2]}</>
                     ) : text}
                   </span>
                 </li>
@@ -233,7 +233,7 @@ export function NewsDetailPage() {
       }
       if (block.startsWith('> ')) {
         return (
-          <blockquote key={i} className="border-l-4 border-primary pl-4 py-2 my-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-r-lg">
+          <blockquote key={i} className="border-l-4 border-primary pl-4 py-2 my-4 italic text-muted-foreground bg-muted rounded-r-lg">
             {block.replace(/^> /gm, '')}
           </blockquote>
         );
@@ -243,17 +243,17 @@ export function NewsDetailPage() {
         return (
           <ol key={i} className="space-y-2 my-4 list-decimal list-inside">
             {items.map((li, j) => (
-              <li key={j} className="text-gray-700 dark:text-gray-300">{li.replace(/^\d\. /, '')}</li>
+              <li key={j} className="text-foreground">{li.replace(/^\d\. /, '')}</li>
             ))}
           </ol>
         );
       }
-      return <p key={i} className="text-gray-700 dark:text-gray-300 leading-relaxed my-4">{block}</p>;
+      return <p key={i} className="text-foreground leading-relaxed my-4">{block}</p>;
     });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-muted/50">
       {/* Hero Image */}
       <div className="relative h-[400px] bg-gray-900 overflow-hidden">
         {item.isVideo ? (
@@ -269,7 +269,7 @@ export function NewsDetailPage() {
               Back to News
             </Link>
             <div className="flex items-center gap-3 mb-3">
-              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${categoryColors[item.category] || 'bg-gray-100 text-gray-700'}`}>
+              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${categoryColors[item.category] || 'bg-muted text-muted-foreground'}`}>
                 {item.category}
               </span>
               <span className="flex items-center gap-1 text-sm text-white/70">
@@ -292,14 +292,14 @@ export function NewsDetailPage() {
         <div className="grid gap-8 lg:grid-cols-3">
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-8">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-8">
               {renderContent(item.fullContent)}
             </div>
 
             {/* Share */}
             <div className="mt-6 flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Share this article:</span>
-              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-primary hover:text-white transition-colors">
+              <span className="text-sm font-medium text-muted-foreground">Share this article:</span>
+              <button className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-primary hover:text-white transition-colors">
                 <Share2 className="h-4 w-4" />
               </button>
             </div>
@@ -308,10 +308,10 @@ export function NewsDetailPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Contact Card */}
-            <Card className="dark:bg-gray-900 dark:border-gray-800">
+            <Card className="bg-card border-border">
               <CardContent className="p-6">
-                <h3 className="font-bold text-black dark:text-white mb-3">Need More Information?</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <h3 className="font-bold text-foreground mb-3">Need More Information?</h3>
+                <p className="text-sm text-muted-foreground mb-4">
                   Contact our team for details about this {item.category.toLowerCase()}.
                 </p>
                 <a href="tel:+918810597980">
@@ -324,24 +324,24 @@ export function NewsDetailPage() {
             </Card>
 
             {/* Related Articles */}
-            <Card className="dark:bg-gray-900 dark:border-gray-800">
+            <Card className="bg-card border-border">
               <CardContent className="p-6">
-                <h3 className="font-bold text-black dark:text-white mb-4">Related Articles</h3>
+                <h3 className="font-bold text-foreground mb-4">Related Articles</h3>
                 <div className="space-y-4">
                   {related.map((rel) => (
                     <Link key={rel.id} to={`/news/${rel.id}`} className="flex gap-3 group">
-                      <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                      <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
                         {rel.isVideo ? (
-                          <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700">
-                            <Play className="h-4 w-4 text-gray-500" />
+                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                            <Play className="h-4 w-4 text-muted-foreground" />
                           </div>
                         ) : (
                           <img src={rel.image} alt={rel.title} className="w-full h-full object-cover" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{new Date(rel.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                        <p className="text-sm font-medium text-black dark:text-white group-hover:text-primary transition-colors line-clamp-2">{rel.subtitle}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(rel.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                        <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors line-clamp-2">{rel.subtitle}</p>
                       </div>
                     </Link>
                   ))}

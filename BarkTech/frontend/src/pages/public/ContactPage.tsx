@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
+const HEAD_OFFICE_ADDRESS = 'Sushant Aquapolis, Crossings Republik, Ghaziabad, Uttar Pradesh 201009, India';
+const GOOGLE_MAPS_EMBED_URL = `https://www.google.com/maps?q=${encodeURIComponent(HEAD_OFFICE_ADDRESS)}&z=15&output=embed`;
+
 export function ContactPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -12,6 +15,33 @@ export function ContactPage() {
           If you have any questions or queries, a member of our staff will always be happy to help.
           Feel free to contact us by telephone or email and we will be sure to get back to you as soon as possible.
         </p>
+      </div>
+
+      {/* Google Maps */}
+      <div className="mb-12 rounded-xl overflow-hidden border border-border shadow-md">
+        <iframe
+          title="Bark Technologies Head Office - Sushant Aquapolis, Ghaziabad"
+          src={GOOGLE_MAPS_EMBED_URL}
+          width="100%"
+          height="400"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          className="w-full"
+        />
+        <div className="bg-muted px-4 py-3 flex items-center gap-2 text-sm text-foreground">
+          <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+          <span>SF-03, Shushat Aquapolis, Crossings Republik, Ghaziabad - 201009, UP</span>
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(HEAD_OFFICE_ADDRESS)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto text-primary hover:underline font-medium"
+          >
+            Get Directions
+          </a>
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
@@ -111,11 +141,11 @@ export function ContactPage() {
 
           {/* Additional contact info */}
           <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="rounded-lg bg-gray-50 p-4">
+            <div className="rounded-lg bg-muted p-4">
               <div className="text-sm font-semibold">Sales Enquiries</div>
               <a href="mailto:sales1@barktechnologies.in" className="text-sm text-primary hover:underline">sales1@barktechnologies.in</a>
             </div>
-            <div className="rounded-lg bg-gray-50 p-4">
+            <div className="rounded-lg bg-muted p-4">
               <div className="text-sm font-semibold">Service & Support</div>
               <a href="mailto:service@barktechnologies.in" className="text-sm text-primary hover:underline">service@barktechnologies.in</a>
             </div>

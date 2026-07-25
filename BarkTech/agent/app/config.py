@@ -38,6 +38,27 @@ class AgentConfig:
     jwt_secret: str = field(default_factory=lambda: os.getenv("JWT_SECRET", ""))
     jwt_algorithm: str = "HS256"
 
+    # Backend API URL (for content/email management)
+    backend_url: str = field(default_factory=lambda: os.getenv("BACKEND_API_URL", "http://localhost:3000"))
+
+    # Super Admin
+    super_admin_email: str = field(default_factory=lambda: os.getenv("SUPER_ADMIN_EMAIL", "harshitgupta04024@gmail.com"))
+    admin_phone_number: str = field(default_factory=lambda: os.getenv("ADMIN_PHONE_NUMBER", "917498415371"))
+
+    # Meta (Facebook + Instagram) API
+    meta_access_token: str = field(default_factory=lambda: os.getenv("META_ACCESS_TOKEN", ""))
+    meta_page_id: str = field(default_factory=lambda: os.getenv("META_PAGE_ID", ""))
+
+    # LinkedIn Marketing API
+    linkedin_access_token: str = field(default_factory=lambda: os.getenv("LINKEDIN_ACCESS_TOKEN", ""))
+    linkedin_org_id: str = field(default_factory=lambda: os.getenv("LINKEDIN_ORG_ID", ""))
+
+    # X/Twitter API
+    x_api_key: str = field(default_factory=lambda: os.getenv("X_API_KEY", ""))
+    x_api_secret: str = field(default_factory=lambda: os.getenv("X_API_SECRET", ""))
+    x_access_token: str = field(default_factory=lambda: os.getenv("X_ACCESS_TOKEN", ""))
+    x_access_secret: str = field(default_factory=lambda: os.getenv("X_ACCESS_SECRET", ""))
+
     # Backend API for model config
     backend_api_url: str = field(default_factory=lambda: os.getenv("BACKEND_API_URL", "http://localhost:3000"))
 

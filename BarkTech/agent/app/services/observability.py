@@ -102,5 +102,4 @@ class ObservabilityService:
             logger.error(f"Failed to get traces: {e}")
             return []
 
-
 observability = ObservabilityService()

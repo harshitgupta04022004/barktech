@@ -32,6 +32,7 @@ export const STATUS_COLORS: Record<string, string> = {
 export const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin',
   admin: 'Admin',
+  client: 'Client',
   sales: 'Sales',
   support: 'Support',
   viewer: 'Viewer',

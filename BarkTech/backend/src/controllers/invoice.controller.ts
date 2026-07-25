@@ -22,6 +22,7 @@ const createInvoiceSchema = z.object({
   modeOfDelivery: z.string().optional().default('BY TRANSPORT'),
   dispatchFrom: z.string().optional(),
   refAttendedBy: z.string().optional(),
+  deliveryLabel: z.string().optional().default('FACTORY DELIVERY'),
   items: z.array(invoiceItemSchema).min(1),
   gstRate: z.number().min(0).max(100).optional().default(18),
   currency: z.string().optional().default('INR'),
@@ -77,9 +78,22 @@ export class InvoiceController {
     return reply.send({ success: true, data: invoice });
   }
 
+  async delete(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = request.params as { id: string };
+    await invoiceService.deleteInvoice(id);
+    return reply.send({ success: true, message: 'Invoice deleted' });
+  }
+
   async stats(request: FastifyRequest, reply: FastifyReply) {
     const stats = await invoiceService.getStats();
     return reply.send({ success: true, data: stats });
+  }
+
+  async revenueTrend(request: FastifyRequest, reply: FastifyReply) {
+    const { period } = request.query as { period?: string };
+    const months = period === '12months' ? 12 : period === '6months' ? 6 : 12;
+    const trend = await invoiceService.getRevenueTrend(months);
+    return reply.send({ success: true, data: trend });
   }
 
   async submit(request: FastifyRequest, reply: FastifyReply) {

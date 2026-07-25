@@ -96,10 +96,10 @@ const blogPosts: BlogPost[] = [
 ];
 
 const categoryColors: Record<string, string> = {
-  'Industry Insights': 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
-  'Product Updates': 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
-  'How-To Guides': 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300',
-  'Company News': 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',
+  'Industry Insights': 'bg-blue-100 text-blue-700',
+  'Product Updates': 'bg-green-100 text-green-700',
+  'How-To Guides': 'bg-purple-100 text-purple-700',
+  'Company News': 'bg-orange-100 text-orange-700',
 };
 
 export function BlogPage() {
@@ -121,8 +121,8 @@ export function BlogPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <div className="mb-10">
-        <h1 className="text-3xl font-bold text-black dark:text-white">Blog & Insights</h1>
-        <p className="mt-2 max-w-2xl text-gray-600 dark:text-gray-400">
+        <h1 className="text-3xl font-bold text-foreground">Blog & Insights</h1>
+        <p className="mt-2 max-w-2xl text-muted-foreground">
           Stay informed with the latest packaging industry insights, product updates, and expert guides from Bark Technologies.
         </p>
       </div>
@@ -130,12 +130,12 @@ export function BlogPage() {
       {/* Search & Filter */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search articles..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 dark:bg-gray-800 dark:border-gray-600"
+            className="pl-9"
           />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -145,7 +145,7 @@ export function BlogPage() {
               variant={activeCategory === cat ? 'default' : 'outline'}
               size="sm"
               onClick={() => setActiveCategory(cat)}
-              className="whitespace-nowrap dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+              className="whitespace-nowrap"
             >
               {cat}
             </Button>
@@ -154,7 +154,7 @@ export function BlogPage() {
       </div>
 
       {/* Posts count */}
-      <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
+      <p className="mb-6 text-sm text-muted-foreground">
         {filteredPosts.length} article{filteredPosts.length !== 1 ? 's' : ''} found
         {activeCategory !== 'All' && ` in "${activeCategory}"`}
       </p>
@@ -164,21 +164,21 @@ export function BlogPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredPosts.map((post) => (
             <Link key={post.id} to={`/blog/${post.id}`}>
-              <Card className="group h-full overflow-hidden transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
-                <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <Card className="group h-full overflow-hidden transition-shadow hover:shadow-lg border-border">
+                <div className="relative aspect-video overflow-hidden bg-muted">
                   <img
                     src={post.featuredImage}
                     alt={post.title}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <span
-                    className={`absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-xs font-medium ${categoryColors[post.category] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}
+                    className={`absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-xs font-medium ${categoryColors[post.category] || 'bg-muted text-muted-foreground'}`}
                   >
                     {post.category}
                   </span>
                 </div>
                 <CardContent className="p-5">
-                  <div className="mb-3 flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="mb-3 flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       {new Date(post.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -188,10 +188,10 @@ export function BlogPage() {
                       {post.author}
                     </span>
                   </div>
-                  <h3 className="mb-2 text-lg font-semibold text-black transition-colors group-hover:text-primary dark:text-white">
+                  <h3 className="mb-2 text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
                     {post.title}
                   </h3>
-                  <p className="mb-4 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                  <p className="mb-4 text-sm text-muted-foreground line-clamp-2">
                     {post.excerpt}
                   </p>
                   <div className="flex items-center justify-between">
@@ -199,7 +199,7 @@ export function BlogPage() {
                       {post.tags.slice(0, 2).map((tag) => (
                         <span
                           key={tag}
-                          className="inline-flex items-center gap-0.5 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                          className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
                         >
                           <Tag className="h-2.5 w-2.5" />
                           {tag}
@@ -217,7 +217,7 @@ export function BlogPage() {
           ))}
         </div>
       ) : (
-        <div className="py-20 text-center text-gray-500 dark:text-gray-400">
+        <div className="py-20 text-center text-muted-foreground">
           <Search className="mx-auto mb-4 h-12 w-12 opacity-50" />
           <p>No articles match your search criteria.</p>
         </div>

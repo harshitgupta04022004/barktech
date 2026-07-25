@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Verify Your Email — Bark Technology</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f5f7; }
+    @media only screen and (max-width: 520px) {
+      .email-container { width: 100% !important; max-width: 100% !important; }
+      .fluid { max-width: 100% !important; height: auto !important; margin-left: auto !important; margin-right: auto !important; }
+      .otp-code { font-size: 36px !important; letter-spacing: 10px !important; padding: 18px 10px !important; }
+      .padding-mobile { padding-left: 20px !important; padding-right: 20px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f5f7; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <center style="width: 100%; background-color: #f4f5f7;">
+    <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all;">
+      Your verification code is {{otp_code}}
+    </div>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="480" class="email-container" style="margin: 0 auto; max-width: 480px;">
+
+      <!-- HEADER -->
+      <tr>
+        <td style="background-color: #0d1b2a; padding: 24px 32px; text-align: center; border-radius: 12px 12px 0 0;" class="padding-mobile">
+          <a href="https://barktechnologies.in" target="_blank" style="text-decoration: none;">
+            <img src="{{logo_url}}" alt="Bark Technology" width="150" style="display: inline-block; max-width: 150px; height: auto; border: 0;">
+          </a>
+        </td>
+      </tr>
+
+      <!-- ORANGE ACCENT BAR -->
+      <tr>
+        <td style="background-color: #e65100; height: 3px; font-size: 0; line-height: 0;">&nbsp;</td>
+      </tr>
+
+      <!-- TITLE -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 32px 32px 12px 32px; text-align: center;" class="padding-mobile">
+          <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: #0d1b2a; line-height: 1.3;">
+            Verify Your Email
+          </h1>
+          <p style="margin: 8px 0 0; font-size: 14px; color: #555b6e; line-height: 1.5;">
+            Use the code below to verify your email address.
+          </p>
+        </td>
+      </tr>
+
+      <!-- OTP CODE BOX -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 8px 32px 24px 32px;" class="padding-mobile">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="background-color: #f8f9fb; border: 2px dashed #e65100; border-radius: 10px; text-align: center; padding: 20px 16px;">
+                <p style="margin: 0 0 6px 0; font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Your Verification Code</p>
+                <p class="otp-code" style="margin: 0; font-size: 42px; font-weight: 800; color: #0d1b2a; letter-spacing: 14px; font-family: 'Courier New', Courier, monospace; line-height: 1.2;">{{otp_code}}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- EXPIRY NOTE -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 0 32px 20px 32px; text-align: center;" class="padding-mobile">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="background-color: #fff8f0; border-radius: 8px; border: 1px solid #fde0c8; text-align: center; padding: 12px 16px;">
+                <p style="margin: 0; font-size: 13px; color: #e65100; font-weight: 600;">
+                  &#9200; This code expires in <strong>{{expiry_minutes}} minutes</strong>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- DIVIDER -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 0 32px;" class="padding-mobile">
+          <hr style="border: none; border-top: 1px solid #e8e8e8; margin: 0;">
+        </td>
+      </tr>
+
+      <!-- SECURITY WARNING -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 16px 32px 28px 32px; text-align: center;" class="padding-mobile">
+          <p style="margin: 0; font-size: 13px; color: #888; line-height: 1.6;">
+            If you didn't request this code, simply ignore this email or contact
+            <a href="mailto:{{support_email}}" style="color: #e65100; text-decoration: none; font-weight: 500;">{{support_email}}</a>
+            for assistance.
+          </p>
+        </td>
+      </tr>
+
+      <!-- FOOTER -->
+      <tr>
+        <td style="background-color: #0d1b2a; padding: 20px 32px; border-radius: 0 0 12px 12px; text-align: center;" class="padding-mobile">
+          <p style="margin: 0 0 4px 0; font-size: 12px; color: #a0a8b8;">
+            Bark Technology | UDYAM-UP-28-0004163
+          </p>
+          <p style="margin: 0 0 4px 0; font-size: 12px; color: #a0a8b8;">
+            Machinery &amp; Packaging Solutions &mdash; India
+          </p>
+          <p style="margin: 0; font-size: 12px;">
+            <a href="mailto:{{support_email}}" style="color: #e65100; text-decoration: none;">{{support_email}}</a>
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </center>
+</body>
+</html>

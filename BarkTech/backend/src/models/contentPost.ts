@@ -11,6 +11,10 @@ export interface IContentPost extends Document {
   newsArticleId?: mongoose.Types.ObjectId;
   caseStudyId?: mongoose.Types.ObjectId;
   blogPostId?: mongoose.Types.ObjectId;
+  pageSlug?: string;
+  contentHash?: string;
+  scheduledAt?: Date;
+  createdVia: 'agent_chat' | 'admin_form' | 'import';
   reviewStatus: 'draft' | 'in_review' | 'approved' | 'rejected';
   reviewNotes?: string;
   reviewedBy?: mongoose.Types.ObjectId;
@@ -36,6 +40,14 @@ const contentPostSchema = new Schema<IContentPost>(
     newsArticleId: { type: Schema.Types.ObjectId, ref: 'NewsArticle', default: null },
     caseStudyId: { type: Schema.Types.ObjectId, ref: 'CaseStudy', default: null },
     blogPostId: { type: Schema.Types.ObjectId, ref: 'BlogPost', default: null },
+    pageSlug: { type: String, default: null },
+    contentHash: { type: String, default: null },
+    scheduledAt: { type: Date, default: null },
+    createdVia: {
+      type: String,
+      enum: ['agent_chat', 'admin_form', 'import'],
+      default: 'admin_form',
+    },
     reviewStatus: {
       type: String,
       enum: ['draft', 'in_review', 'approved', 'rejected'],
@@ -54,5 +66,7 @@ contentPostSchema.index({ reviewStatus: 1 });
 contentPostSchema.index({ createdBy: 1 });
 contentPostSchema.index({ productId: 1 });
 contentPostSchema.index({ createdAt: -1 });
+contentPostSchema.index({ contentHash: 1, postType: 1, createdAt: -1 });
+contentPostSchema.index({ scheduledAt: 1, reviewStatus: 1 });
 
 export const ContentPost = mongoose.model<IContentPost>('ContentPost', contentPostSchema);

@@ -33,8 +33,7 @@ const installations: Installation[] = [
     date: '2026-07-10',
     status: 'completed',
     image: '/images/products/high-speed-automatic-flute-laminator.png',
-    description:
-      'Complete installation and commissioning of high-speed automatic flute laminator with vision-guided registration. Includes operator training and preventive maintenance setup.',
+    description: 'Complete installation and commissioning of high-speed automatic flute laminator with vision-guided registration. Includes operator training and preventive maintenance setup.',
     machineType: 'Flute Laminator',
   },
   {
@@ -47,8 +46,7 @@ const installations: Installation[] = [
     date: '2026-06-25',
     status: 'completed',
     image: '/images/products/Semi-Automatic-Die-Cutting-&-Creasing-Machine.png',
-    description:
-      'Installation of semi-automatic die cutting and creasing machine for pharmaceutical packaging. Full calibration for GMP-compliant packaging materials.',
+    description: 'Installation of semi-automatic die cutting and creasing machine for pharmaceutical packaging. Full calibration for GMP-compliant packaging materials.',
     machineType: 'Die Cutting',
   },
   {
@@ -61,8 +59,7 @@ const installations: Installation[] = [
     date: '2026-06-15',
     status: 'completed',
     image: '/images/products/nc-cutter-machine.jpeg',
-    description:
-      'Precision NC Cutter installation for automotive component packaging. Includes CAD/CAM integration setup and operator certification program.',
+    description: 'Precision NC Cutter installation for automotive component packaging. Includes CAD/CAM integration setup and operator certification program.',
     machineType: 'NC Cutter',
   },
   {
@@ -75,8 +72,7 @@ const installations: Installation[] = [
     date: '2026-07-18',
     status: 'in-progress',
     image: '/images/products/Automatic-folder-gluer.png',
-    description:
-      'Currently installing a complete automatic folder gluer line including pre-folding, gluing, and quality inspection stations. Expected completion within the week.',
+    description: 'Currently installing a complete automatic folder gluer line including pre-folding, gluing, and quality inspection stations. Expected completion within the week.',
     machineType: 'Folder Gluer',
   },
   {
@@ -89,8 +85,7 @@ const installations: Installation[] = [
     date: '2026-07-20',
     status: 'in-progress',
     image: '/images/products/rottery-printer-RS-4.jpeg',
-    description:
-      'Installing a 4-color rotary printer for electronics packaging. Includes ink kitchen setup, color calibration, and production line integration.',
+    description: 'Installing a 4-color rotary printer for electronics packaging. Includes ink kitchen setup, color calibration, and production line integration.',
     machineType: 'Printing',
   },
   {
@@ -103,8 +98,7 @@ const installations: Installation[] = [
     date: '2026-08-05',
     status: 'upcoming',
     image: '/images/5.jpg',
-    description:
-      'Upcoming complete packaging line installation including die cutting, flute lamination, and folder gluer machines. Full turnkey solution with conveyor integration.',
+    description: 'Upcoming complete packaging line installation including die cutting, flute lamination, and folder gluer machines. Full turnkey solution with conveyor integration.',
     machineType: 'Complete Line',
   },
   {
@@ -117,8 +111,7 @@ const installations: Installation[] = [
     date: '2026-08-15',
     status: 'upcoming',
     image: '/images/products/automatic-die-cutting-and-creasing.png',
-    description:
-      'Scheduled installation of fully automatic die cutting machine to replace existing manual equipment. Includes production line redesign and staff retraining.',
+    description: 'Scheduled installation of fully automatic die cutting machine to replace existing manual equipment. Includes production line redesign and staff retraining.',
     machineType: 'Die Cutting',
   },
   {
@@ -131,8 +124,7 @@ const installations: Installation[] = [
     date: '2026-06-05',
     status: 'completed',
     image: '/images/products/semi-automatic-flute-laminator.png',
-    description:
-      'Successful installation of semi-automatic flute laminator for a Kolkata-based packaging manufacturer. Includes glue system setup and quality testing.',
+    description: 'Successful installation of semi-automatic flute laminator for a Kolkata-based packaging manufacturer. Includes glue system setup and quality testing.',
     machineType: 'Flute Laminator',
   },
 ];
@@ -170,35 +162,35 @@ export function InstallationsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-muted/50">
       {/* Hero Section */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+      <div className="bg-background border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 mb-2">
             <Wrench className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-black dark:text-white">Our Installations</h1>
+            <h1 className="text-3xl font-bold text-foreground">Our Installations</h1>
           </div>
-          <p className="mt-2 max-w-2xl text-gray-600 dark:text-gray-400">
+          <p className="mt-2 max-w-2xl text-muted-foreground">
             See where our machinery is making an impact across India. From single machines to complete packaging lines, we deliver and install solutions that drive production.
           </p>
 
           {/* Stats */}
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-lg bg-gray-50 p-4 text-center dark:bg-gray-800">
+            <div className="rounded-lg bg-muted p-4 text-center">
               <p className="text-2xl font-bold text-primary">{stats.total}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Total Installations</p>
+              <p className="text-xs text-muted-foreground">Total Installations</p>
             </div>
-            <div className="rounded-lg bg-green-50 p-4 text-center dark:bg-green-900/20">
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.completed}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+            <div className="rounded-lg bg-green-50 p-4 text-center">
+              <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+              <p className="text-xs text-muted-foreground">Completed</p>
             </div>
-            <div className="rounded-lg bg-amber-50 p-4 text-center dark:bg-amber-900/20">
-              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.inProgress}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
+            <div className="rounded-lg bg-amber-50 p-4 text-center">
+              <p className="text-2xl font-bold text-amber-600">{stats.inProgress}</p>
+              <p className="text-xs text-muted-foreground">In Progress</p>
             </div>
-            <div className="rounded-lg bg-blue-50 p-4 text-center dark:bg-blue-900/20">
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.upcoming}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Upcoming</p>
+            <div className="rounded-lg bg-blue-50 p-4 text-center">
+              <p className="text-2xl font-bold text-blue-600">{stats.upcoming}</p>
+              <p className="text-xs text-muted-foreground">Upcoming</p>
             </div>
           </div>
         </div>
@@ -208,12 +200,12 @@ export function InstallationsPage() {
         {/* Search & Filter */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search installations by client, location, or machine..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 dark:bg-gray-800 dark:border-gray-600"
+              className="pl-9"
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -223,7 +215,7 @@ export function InstallationsPage() {
                 variant={activeStatus === status ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setActiveStatus(status)}
-                className="whitespace-nowrap capitalize dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                className="whitespace-nowrap capitalize"
               >
                 {status === 'All' ? 'All' : statusLabels[status]}
               </Button>
@@ -232,7 +224,7 @@ export function InstallationsPage() {
         </div>
 
         {/* Results count */}
-        <p className="mb-6 text-sm text-gray-600 dark:text-gray-400">
+        <p className="mb-6 text-sm text-muted-foreground">
           {filteredInstallations.length} installation{filteredInstallations.length !== 1 ? 's' : ''} found
         </p>
 
@@ -242,9 +234,9 @@ export function InstallationsPage() {
             {filteredInstallations.map((inst) => (
               <Card
                 key={inst.id}
-                className="group overflow-hidden transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-gray-900"
+                className="group overflow-hidden transition-shadow hover:shadow-lg border-border"
               >
-                <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
+                <div className="relative aspect-video overflow-hidden bg-muted">
                   <img
                     src={inst.image}
                     alt={inst.machine}
@@ -260,15 +252,15 @@ export function InstallationsPage() {
                       {inst.machineType}
                     </span>
                   </div>
-                  <h3 className="mb-2 text-lg font-semibold text-black transition-colors group-hover:text-primary dark:text-white">
+                  <h3 className="mb-2 text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
                     {inst.machine}
                   </h3>
-                  <p className="mb-3 text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                  <p className="mb-3 text-sm text-muted-foreground line-clamp-2">
                     {inst.description}
                   </p>
-                  <div className="space-y-1.5 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="space-y-1.5 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-black dark:text-white">{inst.client}</span>
+                      <span className="font-medium text-foreground">{inst.client}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <MapPin className="h-3 w-3" />
@@ -288,7 +280,7 @@ export function InstallationsPage() {
             ))}
           </div>
         ) : (
-          <div className="py-20 text-center text-gray-500 dark:text-gray-400">
+          <div className="py-20 text-center text-muted-foreground">
             <Search className="mx-auto mb-4 h-12 w-12 opacity-50" />
             <p>No installations match your search criteria.</p>
           </div>
@@ -296,8 +288,8 @@ export function InstallationsPage() {
 
         {/* CTA */}
         <div className="mt-12 rounded-xl bg-primary/5 border border-primary/20 p-8 text-center">
-          <h2 className="mb-2 text-xl font-bold text-black dark:text-white">Ready to Start Your Installation?</h2>
-          <p className="mb-6 text-gray-600 dark:text-gray-400">
+          <h2 className="mb-2 text-xl font-bold text-foreground">Ready to Start Your Installation?</h2>
+          <p className="mb-6 text-muted-foreground">
             Our team handles everything from delivery to setup to training. Get in touch to discuss your requirements.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -308,7 +300,7 @@ export function InstallationsPage() {
               </Button>
             </a>
             <Link to="/contact">
-              <Button size="lg" variant="outline" className="gap-2 dark:border-gray-600 dark:text-gray-200">
+              <Button size="lg" variant="outline" className="gap-2">
                 Request a Quote
                 <ArrowRight className="h-4 w-4" />
               </Button>

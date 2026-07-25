@@ -103,7 +103,7 @@ Ideal for high-volume production:
 ### Automatic Flute Laminators with Integrated Features
 Premium solutions with additional capabilities:
 - Built-in pre-heating systems
-- Automated胶水 (glue) application
+- Automated glue application
 - Quality inspection systems
 - Production tracking and reporting
 
@@ -435,8 +435,8 @@ export function BlogDetailPage() {
   if (!post) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-20 text-center">
-        <h1 className="mb-4 text-2xl font-bold text-black dark:text-white">Article Not Found</h1>
-        <p className="mb-6 text-gray-600 dark:text-gray-400">
+        <h1 className="mb-4 text-2xl font-bold text-foreground">Article Not Found</h1>
+        <p className="mb-6 text-muted-foreground">
           The article you are looking for does not exist or has been moved.
         </p>
         <Link to="/blog">
@@ -460,7 +460,7 @@ export function BlogDetailPage() {
           <h2
             key={i}
             id={block.replace('## ', '').toLowerCase().replace(/\s+/g, '-')}
-            className="mb-4 mt-10 text-2xl font-bold text-black dark:text-white"
+            className="mb-4 mt-10 text-2xl font-bold text-foreground"
           >
             {block.replace('## ', '')}
           </h2>
@@ -468,7 +468,7 @@ export function BlogDetailPage() {
       }
       if (block.startsWith('### ')) {
         return (
-          <h3 key={i} className="mb-3 mt-8 text-xl font-semibold text-black dark:text-white">
+          <h3 key={i} className="mb-3 mt-8 text-xl font-semibold text-foreground">
             {block.replace('### ', '')}
           </h3>
         );
@@ -481,12 +481,12 @@ export function BlogDetailPage() {
               const text = li.replace(/^- /, '');
               const boldMatch = text.match(/\*\*(.*?)\*\*(.*)/);
               return (
-                <li key={j} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+                <li key={j} className="flex items-start gap-2 text-foreground">
                   <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
                   <span>
                     {boldMatch ? (
                       <>
-                        <strong className="text-black dark:text-white">{boldMatch[1]}</strong>
+                        <strong className="text-foreground">{boldMatch[1]}</strong>
                         {boldMatch[2]}
                       </>
                     ) : (
@@ -504,7 +504,7 @@ export function BlogDetailPage() {
         return (
           <ul key={i} className="my-4 space-y-2">
             {items.map((li, j) => (
-              <li key={j} className="flex items-start gap-2 text-gray-700 dark:text-gray-300">
+              <li key={j} className="flex items-start gap-2 text-foreground">
                 <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
                 <span>{li.replace(/^- /, '')}</span>
               </li>
@@ -516,7 +516,7 @@ export function BlogDetailPage() {
         return (
           <blockquote
             key={i}
-            className="my-4 rounded-r-lg border-l-4 border-primary bg-gray-50 py-2 pl-4 italic text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+            className="my-4 rounded-r-lg border-l-4 border-primary bg-muted py-2 pl-4 italic text-muted-foreground"
           >
             {block.replace(/^> /gm, '')}
           </blockquote>
@@ -527,7 +527,7 @@ export function BlogDetailPage() {
         return (
           <ol key={i} className="my-4 list-inside list-decimal space-y-2">
             {items.map((li, j) => (
-              <li key={j} className="text-gray-700 dark:text-gray-300">
+              <li key={j} className="text-foreground">
                 {li.replace(/^\d\. /, '')}
               </li>
             ))}
@@ -535,7 +535,7 @@ export function BlogDetailPage() {
         );
       }
       return (
-        <p key={i} className="my-4 leading-relaxed text-gray-700 dark:text-gray-300">
+        <p key={i} className="my-4 leading-relaxed text-foreground">
           {block}
         </p>
       );
@@ -543,7 +543,7 @@ export function BlogDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-muted/50">
       {/* Hero */}
       <div className="relative h-[400px] bg-gray-900 overflow-hidden">
         <img src={post.featuredImage} alt={post.title} className="h-full w-full object-cover" />
@@ -587,9 +587,9 @@ export function BlogDetailPage() {
           {headings.length > 0 && (
             <aside className="hidden lg:block">
               <div className="sticky top-24">
-                <Card className="dark:bg-gray-900 dark:border-gray-800">
+                <Card className="bg-card border-border">
                   <CardContent className="p-5">
-                    <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">
                       Table of Contents
                     </h3>
                     <nav className="space-y-1.5">
@@ -597,7 +597,7 @@ export function BlogDetailPage() {
                         <a
                           key={i}
                           href={`#${heading.toLowerCase().replace(/\s+/g, '-')}`}
-                          className="block text-sm text-gray-600 transition-colors hover:text-primary dark:text-gray-400 dark:hover:text-primary"
+                          className="block text-sm text-muted-foreground transition-colors hover:text-primary"
                         >
                           {heading}
                         </a>
@@ -612,7 +612,7 @@ export function BlogDetailPage() {
           {/* Main Content */}
           <div className={headings.length > 0 ? 'lg:col-span-3' : 'lg:col-span-4'}>
             <div className="mx-auto max-w-3xl">
-              <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
                 {renderContent(post.content)}
               </div>
 
@@ -621,7 +621,7 @@ export function BlogDetailPage() {
                 {post.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                    className="inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground"
                   >
                     <Tag className="h-3 w-3" />
                     {tag}
@@ -631,18 +631,18 @@ export function BlogDetailPage() {
 
               {/* Share */}
               <div className="mt-8 flex items-center gap-4">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Share this article:</span>
+                <span className="text-sm font-medium text-muted-foreground">Share this article:</span>
                 <div className="flex gap-2">
-                  <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-primary hover:text-white dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-primary dark:hover:text-white">
+                  <button className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-white">
                     <Facebook className="h-4 w-4" />
                   </button>
-                  <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-primary hover:text-white dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-primary dark:hover:text-white">
+                  <button className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-white">
                     <Twitter className="h-4 w-4" />
                   </button>
-                  <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-primary hover:text-white dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-primary dark:hover:text-white">
+                  <button className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-white">
                     <Linkedin className="h-4 w-4" />
                   </button>
-                  <button className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition-colors hover:bg-primary hover:text-white dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-primary dark:hover:text-white">
+                  <button className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-primary hover:text-white">
                     <Share2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -654,12 +654,12 @@ export function BlogDetailPage() {
         {/* Related Articles */}
         {relatedPosts.length > 0 && (
           <div className="mt-16">
-            <h2 className="mb-6 text-2xl font-bold text-black dark:text-white">Related Articles</h2>
+            <h2 className="mb-6 text-2xl font-bold text-foreground">Related Articles</h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {relatedPosts.map((relPost) => (
                 <Link key={relPost.id} to={`/blog/${relPost.id}`}>
-                  <Card className="group h-full overflow-hidden transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-gray-900">
-                    <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
+                  <Card className="group h-full overflow-hidden transition-shadow hover:shadow-lg border-border">
+                    <div className="relative aspect-video overflow-hidden bg-muted">
                       <img
                         src={relPost.featuredImage}
                         alt={relPost.title}
@@ -667,17 +667,17 @@ export function BlogDetailPage() {
                       />
                     </div>
                     <CardContent className="p-5">
-                      <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
+                      <p className="mb-1 text-xs text-muted-foreground">
                         {new Date(relPost.date).toLocaleDateString('en-IN', {
                           day: 'numeric',
                           month: 'short',
                           year: 'numeric',
                         })}
                       </p>
-                      <h3 className="mb-2 text-lg font-semibold text-black transition-colors group-hover:text-primary dark:text-white">
+                      <h3 className="mb-2 text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
                         {relPost.title}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
                         {relPost.excerpt}
                       </p>
                     </CardContent>

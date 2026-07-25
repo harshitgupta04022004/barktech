@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Tax Invoice {{invoice_no}} — {{company_name}}</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f5f7; }
+    @media only screen and (max-width: 680px) {
+      .email-container { width: 100% !important; max-width: 100% !important; }
+      .fluid { max-width: 100% !important; height: auto !important; margin-left: auto !important; margin-right: auto !important; }
+      .padding-mobile { padding-left: 12px !important; padding-right: 12px !important; }
+      .stack-column { display: block !important; width: 100% !important; max-width: 100% !important; direction: ltr !important; }
+      .hide-mobile { display: none !important; }
+      .item-desc { font-size: 11px !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f5f7; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <center style="width: 100%; background-color: #f4f5f7;">
+    <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all;">
+      Tax Invoice {{invoice_no}} from {{company_name}}
+    </div>
+
+    <!-- EMAIL CONTAINER -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="650" class="email-container" style="margin: 0 auto; max-width: 650px; background-color: #ffffff; border-radius: 12px; overflow: hidden;">
+
+      <!-- ==================== GREETING MESSAGE ==================== -->
+      <tr>
+        <td style="background-color: #0d1b2a; padding: 24px 32px; border-radius: 12px 12px 0 0;" class="padding-mobile">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="text-align: center;">
+                <a href="https://barktechnologies.in" target="_blank" style="text-decoration: none;">
+                  <img src="{{company_logo_url}}" alt="{{company_name}}" width="160" style="display: inline-block; max-width: 160px; height: auto; border: 0;">
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="background-color: #e65100; height: 3px; font-size: 0; line-height: 0;">&nbsp;</td>
+      </tr>
+
+      <!-- GREETING + DOWNLOAD BUTTON -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 24px 32px 16px 32px;" class="padding-mobile">
+          <p style="margin: 0; font-size: 15px; color: #333; line-height: 1.6;">Dear <strong>{{buyer_name}}</strong>,</p>
+          <p style="margin: 8px 0 0; font-size: 14px; color: #555; line-height: 1.6;">Please find your invoice <strong>#{{invoice_no}}</strong> below. A PDF copy is also attached to this email for your records.</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 14px;">
+            <tr>
+              <td style="border-radius: 6px; background-color: #e65100;">
+                <a href="{{pdf_download_url}}" target="_blank" style="display: inline-block; padding: 10px 24px; font-size: 13px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 6px; background-color: #e65100; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">&#128196; Download PDF</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- ==================== INVOICE BLOCK ==================== -->
+      <tr>
+        <td style="padding: 0 24px 24px 24px;" class="padding-mobile">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; border-collapse: collapse;">
+
+            <!-- ===== 1. COMPANY HEADER BLOCK ===== -->
+            <tr>
+              <td style="padding: 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fb; border-bottom: 2px solid #e65100;">
+                  <tr>
+                    <td width="70" style="padding: 16px 14px 16px 16px; vertical-align: top;">
+                      <img src="{{company_logo_url}}" alt="{{company_name}}" width="56" style="display: block; width: 56px; height: auto; border-radius: 4px;">
+                    </td>
+                    <td style="padding: 16px 16px 16px 0; vertical-align: top;">
+                      <p style="margin: 0; font-size: 17px; font-weight: 700; color: #0d1b2a;">{{company_name}}</p>
+                      <p style="margin: 4px 0 0; font-size: 12px; color: #666; line-height: 1.5;">{{company_address}}</p>
+                      <p style="margin: 4px 0 0; font-size: 12px; color: #666;">GSTIN: <strong>{{company_gstin}}</strong></p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- ===== 2. INVOICE META ROW ===== -->
+            <tr>
+              <td style="padding: 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td width="50%" style="padding: 14px 16px; border-bottom: 1px solid #eee; vertical-align: top;">
+                      <p style="margin: 0 0 3px; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">Invoice No.</p>
+                      <p style="margin: 0; font-size: 15px; font-weight: 700; color: #0d1b2a;">{{invoice_no}}</p>
+                    </td>
+                    <td width="25%" style="padding: 14px 16px; border-bottom: 1px solid #eee; vertical-align: top;">
+                      <p style="margin: 0 0 3px; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">Date</p>
+                      <p style="margin: 0; font-size: 13px; font-weight: 600; color: #333;">{{invoice_date}}</p>
+                    </td>
+                    <td width="25%" style="padding: 14px 16px; border-bottom: 1px solid #eee; vertical-align: top;">
+                      <p style="margin: 0 0 3px; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">Due Date</p>
+                      <p style="margin: 0; font-size: 13px; font-weight: 600; color: #333;">{{due_date}}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td width="50%" style="padding: 10px 16px 14px 16px; border-bottom: 1px solid #eee;">
+                      <p style="margin: 0 0 3px; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">Place of Supply</p>
+                      <p style="margin: 0; font-size: 13px; font-weight: 600; color: #333;">{{place_of_supply}}</p>
+                    </td>
+                    <td width="50%" style="padding: 10px 16px 14px 16px; border-bottom: 1px solid #eee;">
+                      <p style="margin: 0 0 3px; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">State Code</p>
+                      <p style="margin: 0; font-size: 13px; font-weight: 600; color: #333;">{{state_code}}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- ===== 3. BILL-TO / SHIP-TO ===== -->
+            <tr>
+              <td style="padding: 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <!-- Bill To -->
+                    <td width="50%" style="padding: 14px 16px; border-bottom: 1px solid #eee; vertical-align: top; border-right: 1px solid #eee;">
+                      <p style="margin: 0 0 6px; font-size: 10px; color: #e65100; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Bill To</p>
+                      <p style="margin: 0; font-size: 14px; font-weight: 700; color: #0d1b2a;">{{buyer_name}}</p>
+                      <p style="margin: 3px 0 0; font-size: 12px; color: #666; line-height: 1.5;">{{buyer_address}}</p>
+                      <p style="margin: 4px 0 0; font-size: 12px; color: #666;">GSTIN: <strong>{{buyer_gstin}}</strong></p>
+                    </td>
+                    <!-- Ship To -->
+                    <td width="50%" style="padding: 14px 16px; border-bottom: 1px solid #eee; vertical-align: top;">
+                      <p style="margin: 0 0 6px; font-size: 10px; color: #e65100; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Ship To</p>
+                      <p style="margin: 0; font-size: 14px; font-weight: 700; color: #0d1b2a;">{{ship_to_name}}</p>
+                      <p style="margin: 3px 0 0; font-size: 12px; color: #666; line-height: 1.5;">{{ship_to_address}}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- ===== 4. ITEMIZED TABLE ===== -->
+            <tr>
+              <td style="padding: 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <!-- Table Header -->
+                  <tr>
+                    <td style="background-color: #0d1b2a; padding: 10px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; width: 5%;">#</td>
+                    <td style="background-color: #0d1b2a; padding: 10px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; width: 30%;">Description</td>
+                    <td style="background-color: #0d1b2a; padding: 10px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; width: 10%;" class="hide-mobile">HSN</td>
+                    <td style="background-color: #0d1b2a; padding: 10px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; width: 8%;">Qty</td>
+                    <td style="background-color: #0d1b2a; padding: 10px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; width: 14%;">Rate</td>
+                    <td style="background-color: #0d1b2a; padding: 10px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; width: 9%;" class="hide-mobile">GST%</td>
+                    <td style="background-color: #0d1b2a; padding: 10px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; width: 14%;">Amount</td>
+                  </tr>
+
+                  <!-- {{#each item_rows}} -->
+                  <tr>
+                    <td style="padding: 10px 8px; font-size: 12px; color: #666; text-align: center; border-bottom: 1px solid #f0f0f0; background-color: {{#if @odd}}#fafafa{{else}}#ffffff{{/if}};">{{this.sno}}</td>
+                    <td style="padding: 10px 8px; font-size: 12px; color: #333; font-weight: 600; border-bottom: 1px solid #f0f0f0; background-color: {{#if @odd}}#fafafa{{else}}#ffffff{{/if}};" class="item-desc">{{this.description}}</td>
+                    <td style="padding: 10px 8px; font-size: 12px; color: #666; text-align: center; border-bottom: 1px solid #f0f0f0; background-color: {{#if @odd}}#fafafa{{else}}#ffffff{{/if}};" class="hide-mobile">{{this.hsn_code}}</td>
+                    <td style="padding: 10px 8px; font-size: 12px; color: #333; text-align: center; border-bottom: 1px solid #f0f0f0; background-color: {{#if @odd}}#fafafa{{else}}#ffffff{{/if}};">{{this.qty}} {{this.unit}}</td>
+                    <td style="padding: 10px 8px; font-size: 12px; color: #333; text-align: right; border-bottom: 1px solid #f0f0f0; background-color: {{#if @odd}}#fafafa{{else}}#ffffff{{/if}};">{{this.rate}}</td>
+                    <td style="padding: 10px 8px; font-size: 12px; color: #666; text-align: center; border-bottom: 1px solid #f0f0f0; background-color: {{#if @odd}}#fafafa{{else}}#ffffff{{/if}};" class="hide-mobile">{{this.gst_percent}}%</td>
+                    <td style="padding: 10px 8px; font-size: 12px; color: #333; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0; background-color: {{#if @odd}}#fafafa{{else}}#ffffff{{/if}};">{{this.amount}}</td>
+                  </tr>
+                  <!-- {{/each}} -->
+
+                </table>
+              </td>
+            </tr>
+
+            <!-- ===== 5. TOTALS BLOCK ===== -->
+            <tr>
+              <td style="padding: 0;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td width="55%" style="padding: 0 16px;" valign="top">&nbsp;</td>
+                    <td width="45%" style="padding: 0;">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                        <tr>
+                          <td style="padding: 8px 16px; font-size: 12px; color: #888; text-align: right; border-bottom: 1px solid #f0f0f0;">Subtotal</td>
+                          <td style="padding: 8px 16px; font-size: 12px; color: #333; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0; width: 40%;">{{subtotal}}</td>
+                        </tr>
+                        <!-- {{#if cgst}} -->
+                        <tr>
+                          <td style="padding: 8px 16px; font-size: 12px; color: #888; text-align: right; border-bottom: 1px solid #f0f0f0;">CGST</td>
+                          <td style="padding: 8px 16px; font-size: 12px; color: #333; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">{{cgst}}</td>
+                        </tr>
+                        <!-- {{/if}} -->
+                        <!-- {{#if sgst}} -->
+                        <tr>
+                          <td style="padding: 8px 16px; font-size: 12px; color: #888; text-align: right; border-bottom: 1px solid #f0f0f0;">SGST</td>
+                          <td style="padding: 8px 16px; font-size: 12px; color: #333; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">{{sgst}}</td>
+                        </tr>
+                        <!-- {{/if}} -->
+                        <!-- {{#if igst}} -->
+                        <tr>
+                          <td style="padding: 8px 16px; font-size: 12px; color: #888; text-align: right; border-bottom: 1px solid #f0f0f0;">IGST</td>
+                          <td style="padding: 8px 16px; font-size: 12px; color: #333; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">{{igst}}</td>
+                        </tr>
+                        <!-- {{/if}} -->
+                        <!-- {{#if round_off}} -->
+                        <tr>
+                          <td style="padding: 8px 16px; font-size: 12px; color: #888; text-align: right; border-bottom: 1px solid #f0f0f0;">Round Off</td>
+                          <td style="padding: 8px 16px; font-size: 12px; color: #333; font-weight: 600; text-align: right; border-bottom: 1px solid #f0f0f0;">{{round_off}}</td>
+                        </tr>
+                        <!-- {{/if}} -->
+                        <tr>
+                          <td style="padding: 10px 16px; font-size: 14px; font-weight: 700; color: #0d1b2a; text-align: right; background-color: #f8f9fb;">Grand Total</td>
+                          <td style="padding: 10px 16px; font-size: 15px; font-weight: 800; color: #e65100; text-align: right; background-color: #f8f9fb;">{{grand_total}}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- ===== 6. AMOUNT IN WORDS ===== -->
+            <tr>
+              <td style="padding: 14px 16px; border-top: 1px solid #eee;">
+                <p style="margin: 0; font-size: 12px; color: #666;"><strong>Amount in Words:</strong> <span style="color: #333; font-weight: 600;">{{amount_in_words}}</span></p>
+              </td>
+            </tr>
+
+            <!-- ===== 7. BANK DETAILS ===== -->
+            <tr>
+              <td style="padding: 0 16px 14px 16px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fb; border-radius: 6px; border: 1px solid #eee;">
+                  <tr>
+                    <td style="padding: 12px 16px;">
+                      <p style="margin: 0 0 6px; font-size: 11px; color: #e65100; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Bank Details</p>
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                        <tr>
+                          <td style="padding: 2px 0; font-size: 12px; color: #888; width: 120px;">Account Name</td>
+                          <td style="padding: 2px 0; font-size: 12px; color: #333; font-weight: 600;">{{bank_account_name}}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 2px 0; font-size: 12px; color: #888;">Account No.</td>
+                          <td style="padding: 2px 0; font-size: 12px; color: #333; font-weight: 600;">{{bank_account_no}}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 2px 0; font-size: 12px; color: #888;">IFSC</td>
+                          <td style="padding: 2px 0; font-size: 12px; color: #333; font-weight: 600;">{{bank_ifsc}}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 2px 0; font-size: 12px; color: #888;">Bank Name</td>
+                          <td style="padding: 2px 0; font-size: 12px; color: #333; font-weight: 600;">{{bank_name}}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- ===== 8. TERMS ===== -->
+            <tr>
+              <td style="padding: 0 16px 14px 16px;">
+                <p style="margin: 0 0 6px; font-size: 11px; color: #e65100; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Terms &amp; Conditions</p>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <!-- {{#each terms}} -->
+                  <tr>
+                    <td style="padding: 2px 0; font-size: 11px; color: #888; width: 20px; vertical-align: top;">{{this.number}}.</td>
+                    <td style="padding: 2px 0; font-size: 11px; color: #666; line-height: 1.5;">{{this.text}}</td>
+                  </tr>
+                  <!-- {{/each}} -->
+                </table>
+              </td>
+            </tr>
+
+            <!-- ===== 9. SIGNATURE BLOCK ===== -->
+            <tr>
+              <td style="padding: 0 16px 16px 16px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                  <tr>
+                    <td width="50%" style="vertical-align: bottom;">
+                      <p style="margin: 0; font-size: 11px; color: #999;">{{company_seal_note}}</p>
+                    </td>
+                    <td width="50%" style="text-align: right; vertical-align: bottom;">
+                      <p style="margin: 0 0 2px; font-size: 11px; color: #999;">For <strong>{{company_name}}</strong></p>
+                      <p style="margin: 20px 0 0; font-size: 12px; color: #333; font-weight: 600; border-top: 1px solid #ccc; padding-top: 6px; display: inline-block;">{{authorized_signatory}}</p>
+                      <p style="margin: 2px 0 0; font-size: 11px; color: #999;">Authorized Signatory</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+
+      <!-- ==================== FOOTER ==================== -->
+      <tr>
+        <td style="background-color: #0d1b2a; padding: 20px 32px; border-radius: 0 0 12px 12px; text-align: center;" class="padding-mobile">
+          <p style="margin: 0 0 4px 0; font-size: 12px; color: #a0a8b8;">
+            <a href="mailto:{{support_email}}" style="color: #e65100; text-decoration: none;">{{support_email}}</a>
+            &nbsp;|&nbsp;
+            <a href="tel:{{support_phone}}" style="color: #e65100; text-decoration: none;">{{support_phone}}</a>
+          </p>
+          <p style="margin: 0 0 4px 0; font-size: 12px; color: #a0a8b8;">{{company_name}} | {{company_address}}</p>
+          <p style="margin: 0; font-size: 11px; color: #6b7280;">This is a computer-generated invoice and does not require a physical signature.</p>
+        </td>
+      </tr>
+
+    </table>
+  </center>
+</body>
+</html>

@@ -46,6 +46,11 @@ export class InvoiceRepository {
     return Invoice.findByIdAndUpdate(id, data, { new: true });
   }
 
+  async delete(id: string): Promise<boolean> {
+    const result = await Invoice.findByIdAndDelete(id);
+    return !!result;
+  }
+
   async getNextInvoiceNumber(): Promise<string> {
     const now = new Date();
     const fyStart = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;

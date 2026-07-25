@@ -108,15 +108,15 @@ export function FileUpload({
           'relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 text-center transition-colors cursor-pointer',
           isDragging
             ? 'border-primary bg-primary/5'
-            : 'border-gray-300 hover:border-primary hover:bg-gray-50 dark:border-gray-600 dark:hover:border-primary dark:hover:bg-gray-800/50',
+            : 'border-border hover:border-primary hover:bg-muted',
           disabled && 'pointer-events-none opacity-50'
         )}
       >
-        <Upload className={cn('mb-3 h-8 w-8', isDragging ? 'text-primary' : 'text-gray-400 dark:text-gray-500')} />
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <Upload className={cn('mb-3 h-8 w-8', isDragging ? 'text-primary' : 'text-muted-foreground')} />
+        <p className="text-sm font-medium text-foreground">
           {isDragging ? 'Drop files here' : 'Drag & drop files here, or click to browse'}
         </p>
-        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        <p className="mt-1 text-xs text-muted-foreground">
           Accepted: {accept} &mdash; Max {maxSizeMB}MB {multiple ? '(multiple files)' : ''}
         </p>
         <input
@@ -138,20 +138,20 @@ export function FileUpload({
           {files.map((uploaded, idx) => (
             <div
               key={`${uploaded.file.name}-${idx}`}
-              className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900"
+              className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
             >
               {uploaded.preview ? (
                 <img src={uploaded.preview} alt={uploaded.file.name} className="h-10 w-10 rounded object-cover" />
               ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded bg-gray-100 dark:bg-gray-800">
-                  <FileText className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                <div className="flex h-10 w-10 items-center justify-center rounded bg-muted">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
                 </div>
               )}
 
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">{uploaded.file.name}</p>
+                <p className="text-sm font-medium text-foreground truncate">{uploaded.file.name}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="flex-1 h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                  <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
                     <div
                       className={cn(
                         'h-full rounded-full transition-all duration-300',
@@ -160,11 +160,11 @@ export function FileUpload({
                       style={{ width: `${uploaded.progress}%` }}
                     />
                   </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 w-10 text-right">
+                  <span className="text-xs text-muted-foreground w-10 text-right">
                     {uploaded.progress >= 100 ? 'Done' : `${Math.round(uploaded.progress)}%`}
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {(uploaded.file.size / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
@@ -172,7 +172,7 @@ export function FileUpload({
               <button
                 type="button"
                 onClick={() => removeFile(idx)}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:text-red-400 dark:hover:bg-gray-800 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-gray-100   transition-colors"
                 title="Remove file"
               >
                 <X className="h-4 w-4" />

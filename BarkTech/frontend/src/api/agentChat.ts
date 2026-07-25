@@ -92,6 +92,24 @@ export const agentChatApi = {
   },
 
   /**
+   * Fetch conversation messages for a specific thread.
+   */
+  async getSessionMessages(sessionId: string): Promise<Array<{ role: string; content: string }>> {
+    try {
+      const response = await fetch(`${AGENT_BASE_URL}/admin/sessions/${encodeURIComponent(sessionId)}/messages`, {
+        method: 'GET',
+        headers: buildHeaders(),
+      });
+      if (!response.ok) throw new Error(`Failed to fetch messages: ${response.status}`);
+      const data = await response.json();
+      return data.messages || [];
+    } catch (err) {
+      console.error('Failed to fetch session messages:', err);
+      return [];
+    }
+  },
+
+  /**
    * Delete a conversation thread.
    */
   async deleteSession(sessionId: string): Promise<boolean> {

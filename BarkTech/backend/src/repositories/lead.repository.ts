@@ -37,11 +37,25 @@ export class LeadRepository {
     return Lead.findByIdAndUpdate(id, data, { new: true });
   }
 
-  async getStats(): Promise<Record<string, number>> {
-    const results = await Lead.aggregate([
-      { $group: { _id: '$status', count: { $sum: 1 } } },
+  async getStats(): Promise<{ byStatus: Record<string, number>; bySource: Record<string, number>; total: number }> {
+    const [statusResults, sourceResults] = await Promise.all([
+      Lead.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+      Lead.aggregate([{ $group: { _id: '$source', count: { $sum: 1 } } }]),
     ]);
-    return results.reduce((acc, r) => ({ ...acc, [r._id]: r.count }), {} as Record<string, number>);
+
+    const byStatus = statusResults.reduce((acc: Record<string, number>, r: any) => {
+      acc[r._id] = r.count;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const bySource = sourceResults.reduce((acc: Record<string, number>, r: any) => {
+      acc[r._id] = r.count;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const total = Object.values(byStatus).reduce((a: number, b: number) => a + b, 0);
+
+    return { byStatus, bySource, total };
   }
 }
 

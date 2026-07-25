@@ -85,6 +85,13 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
+  async patch<T>(endpoint: string, body?: unknown): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
   async fetchBlob(endpoint: string): Promise<Blob | null> {
     const token = this.getToken();
     const headers: Record<string, string> = {};

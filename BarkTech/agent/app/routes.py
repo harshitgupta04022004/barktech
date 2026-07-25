@@ -25,6 +25,7 @@ from app.graph.admin_agent import run_admin_agent
 from app.checkpointer import get_checkpointer
 from app.config import config
 from app.tools.file_processing import process_uploaded_file, format_file_context, build_multimodal_content, SUPPORTED_TYPES, MAX_FILE_SIZE_BYTES
+from app.utils.cost import calculate_cost
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,18 @@ async def _save_chat_log(
 
         client = AsyncIOMotorClient(config.mongodb_uri)
         db = client[config.mongodb_db]
+
+        # Process tool calls to ensure they match the expected schema
+        processed_tool_calls = []
+        if tool_calls:
+            for tc in tool_calls:
+                processed_tool_calls.append({
+                    "name": tc.get("name", "unknown"),
+                    "input": str(tc.get("input", ""))[:500],
+                    "output": str(tc.get("output", ""))[:500],
+                    "success": tc.get("success", True),
+                })
+
         await db.chatlogs.insert_one(
             {
                 "sessionId": session_id,
@@ -70,7 +83,7 @@ async def _save_chat_log(
                 "outputTokens": output_tokens,
                 "totalTokens": total_tokens,
                 "cost": cost,
-                "toolCalls": tool_calls or [],
+                "toolCalls": processed_tool_calls,
                 "latencyMs": latency_ms,
                 "createdAt": datetime.utcnow(),
                 "updatedAt": datetime.utcnow(),
@@ -149,6 +162,12 @@ async def client_chat(body: ChatMessage, user: dict = Depends(authenticate_clien
         user_context=user,
     )
     latency = (time.time() - start) * 1000
+    cost = calculate_cost(
+        config.client_model,
+        usage_data.get("input_tokens", 0),
+        usage_data.get("output_tokens", 0),
+        api_cost=usage_data.get("cost", 0),
+    )
     await _save_chat_log(
         session_id=thread_id,
         user_message=body.message,
@@ -161,7 +180,8 @@ async def client_chat(body: ChatMessage, user: dict = Depends(authenticate_clien
         input_tokens=usage_data.get("input_tokens", 0),
         output_tokens=usage_data.get("output_tokens", 0),
         total_tokens=usage_data.get("total_tokens", 0),
-        cost=usage_data.get("cost", 0),
+        cost=cost,
+        tool_calls=usage_data.get("tool_calls", []),
     )
     return ChatResponse(response=result, thread_id=thread_id)
 
@@ -179,6 +199,12 @@ async def client_chat_stream(body: ChatMessage, user: dict = Depends(authenticat
             user_context=user,
         )
         latency = (time.time() - start) * 1000
+        cost = calculate_cost(
+            config.client_model,
+            usage_data.get("input_tokens", 0),
+            usage_data.get("output_tokens", 0),
+            api_cost=usage_data.get("cost", 0),
+        )
         await _save_chat_log(
             session_id=thread_id,
             user_message=body.message,
@@ -191,7 +217,8 @@ async def client_chat_stream(body: ChatMessage, user: dict = Depends(authenticat
             input_tokens=usage_data.get("input_tokens", 0),
             output_tokens=usage_data.get("output_tokens", 0),
             total_tokens=usage_data.get("total_tokens", 0),
-            cost=usage_data.get("cost", 0),
+            cost=cost,
+            tool_calls=usage_data.get("tool_calls", []),
         )
         yield f"data: {result}\n\n"
         yield "data: [DONE]\n\n"
@@ -215,6 +242,12 @@ async def admin_chat(body: AdminChatMessage, user: dict = Depends(authenticate_a
         user_context=user,
     )
     latency = (time.time() - start) * 1000
+    cost = calculate_cost(
+        config.admin_model,
+        usage_data.get("input_tokens", 0),
+        usage_data.get("output_tokens", 0),
+        api_cost=usage_data.get("cost", 0),
+    )
     await _save_chat_log(
         session_id=thread_id,
         user_message=body.message,
@@ -227,7 +260,8 @@ async def admin_chat(body: AdminChatMessage, user: dict = Depends(authenticate_a
         input_tokens=usage_data.get("input_tokens", 0),
         output_tokens=usage_data.get("output_tokens", 0),
         total_tokens=usage_data.get("total_tokens", 0),
-        cost=usage_data.get("cost", 0),
+        cost=cost,
+        tool_calls=usage_data.get("tool_calls", []),
     )
     return ChatResponse(response=result, thread_id=thread_id)
 
@@ -252,6 +286,12 @@ async def admin_chat_stream(body: AdminChatMessage, user: dict = Depends(authent
             files=body.files,
         )
         latency = (time.time() - start) * 1000
+        cost = calculate_cost(
+            config.admin_model,
+            usage_data.get("input_tokens", 0),
+            usage_data.get("output_tokens", 0),
+            api_cost=usage_data.get("cost", 0),
+        )
         await _save_chat_log(
             session_id=thread_id,
             user_message=body.message,
@@ -264,7 +304,8 @@ async def admin_chat_stream(body: AdminChatMessage, user: dict = Depends(authent
             input_tokens=usage_data.get("input_tokens", 0),
             output_tokens=usage_data.get("output_tokens", 0),
             total_tokens=usage_data.get("total_tokens", 0),
-            cost=usage_data.get("cost", 0),
+            cost=cost,
+            tool_calls=usage_data.get("tool_calls", []),
         )
         # Send content as a single chunk (non-streaming backend response)
         yield f"data: {json.dumps({'type': 'content_delta', 'content': result})}\n\n"
@@ -337,7 +378,7 @@ async def list_sessions(user: dict = Depends(authenticate_admin)):
             sessions.append(SessionInfo(
                 thread_id=thread_id,
                 title=title,
-                last_message_at=r.get("last_message_at", datetime.utcnow().isoformat()),
+                last_message_at=r.get("last_message_at", datetime.utcnow().isoformat() + "Z"),
                 message_count=r.get("message_count", 0),
             ))
 
@@ -345,6 +386,63 @@ async def list_sessions(user: dict = Depends(authenticate_admin)):
     except Exception as e:
         logger.error(f"Failed to list sessions: {e}")
         return {"sessions": []}
+
+
+@admin_router.get("/sessions/{session_id}/messages")
+async def get_session_messages(session_id: str, user: dict = Depends(authenticate_admin)):
+    """Fetch conversation messages for a specific thread.
+
+    Returns messages from the LangGraph checkpointer, formatted for frontend display.
+    """
+    user_id = user.get("user_id", "default")
+    expected_prefix = f"admin-{user_id}"
+
+    if not session_id.startswith(expected_prefix):
+        raise HTTPException(status_code=403, detail="Not authorized to access this session")
+
+    checkpointer = get_checkpointer()
+    if checkpointer is None:
+        return {"messages": []}
+
+    try:
+        checkpoint = await checkpointer.aget({"configurable": {"thread_id": session_id}})
+        if not checkpoint or not checkpoint.get("channel_values"):
+            return {"messages": []}
+
+        raw_messages = checkpoint["channel_values"].get("messages", [])
+        formatted = []
+        for msg in raw_messages:
+            role = "assistant"
+            content = ""
+            if hasattr(msg, "type"):
+                if msg.type == "human":
+                    role = "user"
+                elif msg.type == "ai":
+                    role = "assistant"
+                elif msg.type == "system":
+                    role = "system"
+
+            if hasattr(msg, "content"):
+                if isinstance(msg.content, str):
+                    content = msg.content
+                elif isinstance(msg.content, list):
+                    # Multimodal content — extract text parts
+                    text_parts = []
+                    for part in msg.content:
+                        if isinstance(part, dict) and part.get("type") == "text":
+                            text_parts.append(part.get("text", ""))
+                    content = " ".join(text_parts)
+
+            if content:
+                formatted.append({
+                    "role": role,
+                    "content": content,
+                })
+
+        return {"messages": formatted}
+    except Exception as e:
+        logger.error(f"Failed to fetch session messages: {e}")
+        return {"messages": []}
 
 
 @admin_router.delete("/sessions/{session_id}")
@@ -399,3 +497,198 @@ async def clear_session(session_id: str, user: dict = Depends(authenticate_admin
     except Exception as e:
         logger.error(f"Failed to clear session: {e}")
         raise HTTPException(status_code=500, detail="Failed to clear session")
+
+
+# ── Invoice AI Refine Endpoint ────────────────────────
+
+
+class InvoiceRefineRequest(BaseModel):
+    section: str = "all"  # bill_to, ship_to, items, all
+    current_data: dict = {}
+
+
+class InvoiceRefineResponse(BaseModel):
+    suggestions: list[dict]
+    error: Optional[str] = None
+
+
+@admin_router.post("/invoice/refine", response_model=InvoiceRefineResponse)
+async def refine_invoice_field(body: InvoiceRefineRequest, user: dict = Depends(authenticate_admin)):
+    """AI-powered invoice field refinement.
+
+    Accepts current form data + section to refine, returns suggestions
+    for improving business names, addresses, HSN codes, descriptions, etc.
+    """
+    section = body.section
+    current_data = body.current_data
+
+    refine_prompt = f"""You are an invoice refinement assistant for Bark Technologies (B2B machinery company).
+Current invoice data:
+{json.dumps(current_data, indent=2, default=str)}
+Section to refine: {section}
+Analyze the current data and provide suggestions for improvement. Return a JSON array of suggestions:
+[
+  {{
+    "field": "customerName",
+    "current_value": "raj",
+    "suggested_value": "Raj Industries Pvt. Ltd.",
+    "reason": "Proper business name formatting with legal entity type"
+  }},
+  {{
+    "field": "items[0].hsnCode",
+    "current_value": "",
+    "suggested_value": "84224000",
+    "reason": "HSN code for packaging/filling machines"
+  }}
+]
+Focus on:
+- Business name formatting (add Pvt. Ltd., LLP, etc. if appropriate)
+- Address completeness (add PIN code, state if missing)
+- HSN code suggestions based on item descriptions
+- GST rate validation (18% standard for machinery)
+- Description improvements (more professional, specific)
+Return ONLY the JSON array, no other text."""
+
+    try:
+        from langchain_core.messages import SystemMessage as LcSystemMessage, HumanMessage as LcHumanMessage
+        llm = _build_refine_llm()
+        response = await llm.ainvoke([
+            LcSystemMessage(content="You are an invoice data refinement assistant. Return only valid JSON."),
+            LcHumanMessage(content=refine_prompt),
+        ])
+
+        suggestions = json.loads(response.content)
+        return InvoiceRefineResponse(suggestions=suggestions)
+    except json.JSONDecodeError:
+        return InvoiceRefineResponse(suggestions=[], error="Could not parse AI suggestions")
+    except Exception as e:
+        logger.error(f"Invoice refine failed: {e}")
+        return InvoiceRefineResponse(suggestions=[], error=str(e))
+
+
+def _build_refine_llm():
+    """Build a lightweight LLM for invoice refinement."""
+    from langchain_openai import ChatOpenAI
+    return ChatOpenAI(
+        model=config.admin_model,
+        openai_api_key=config.openrouter_api_key,
+        openai_api_base=config.openrouter_base_url,
+        temperature=0.3,
+        max_tokens=1000,
+        request_timeout=30,
+    )
+
+
+# ── Event-Driven Multi-Agent System Endpoint ──────────
+
+@admin_router.post("/agents/chat", response_model=ChatResponse)
+async def agent_chat(body: AdminChatMessage, user: dict = Depends(authenticate_admin)):
+    """Event-driven multi-agent chat using the new supervisor orchestrator.
+
+    Routes requests to specialized agents (CRM, Sales, Content, Inventory,
+    Scheduling, Research) via the supervisor. Each agent has its own MCP
+    tools and subscribes to domain events via Redis Streams.
+    """
+    thread_id = body.thread_id or f"agent-{user['user_id']}"
+    start = time.time()
+
+    try:
+        from app.agents.supervisor import get_supervisor
+        supervisor = get_supervisor()
+        result, usage_data = await supervisor.route_request(
+            body.message, thread_id, user_context=user,
+        )
+    except Exception as e:
+        logger.error(f"Agent system error: {e}", exc_info=True)
+        result = f"Agent system error: {str(e)[:200]}"
+        usage_data = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "cost": 0}
+
+    latency = (time.time() - start) * 1000
+    cost = calculate_cost(
+        config.admin_model,
+        usage_data.get("input_tokens", 0),
+        usage_data.get("output_tokens", 0),
+        api_cost=usage_data.get("cost", 0),
+    )
+    await _save_chat_log(
+        session_id=thread_id,
+        user_message=body.message,
+        assistant_reply=result,
+        source="admin_agents",
+        user_email=user.get("email", ""),
+        user_name=user.get("name", ""),
+        model=config.admin_model,
+        latency_ms=latency,
+        input_tokens=usage_data.get("input_tokens", 0),
+        output_tokens=usage_data.get("output_tokens", 0),
+        total_tokens=usage_data.get("total_tokens", 0),
+        cost=cost,
+        tool_calls=usage_data.get("tool_calls", []),
+    )
+    return ChatResponse(response=result, thread_id=thread_id)
+
+
+@admin_router.post("/agents/chat/stream")
+async def agent_chat_stream(body: AdminChatMessage, user: dict = Depends(authenticate_admin)):
+    """SSE streaming for the event-driven multi-agent system."""
+    thread_id = body.thread_id or f"agent-{user['user_id']}"
+
+    async def event_generator():
+        start = time.time()
+        try:
+            from app.agents.supervisor import get_supervisor
+            supervisor = get_supervisor()
+            result, usage_data = await supervisor.route_request(
+                body.message, thread_id, user_context=user,
+            )
+        except Exception as e:
+            logger.error(f"Agent stream error: {e}", exc_info=True)
+            result = f"Agent system error: {str(e)[:200]}"
+            usage_data = {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "cost": 0}
+
+        latency = (time.time() - start) * 1000
+        cost = calculate_cost(
+            config.admin_model,
+            usage_data.get("input_tokens", 0),
+            usage_data.get("output_tokens", 0),
+            api_cost=usage_data.get("cost", 0),
+        )
+        await _save_chat_log(
+            session_id=thread_id,
+            user_message=body.message,
+            assistant_reply=result,
+            source="admin_agents",
+            user_email=user.get("email", ""),
+            user_name=user.get("name", ""),
+            model=config.admin_model,
+            latency_ms=latency,
+            input_tokens=usage_data.get("input_tokens", 0),
+            output_tokens=usage_data.get("output_tokens", 0),
+            total_tokens=usage_data.get("total_tokens", 0),
+            cost=cost,
+            tool_calls=usage_data.get("tool_calls", []),
+        )
+        yield f"data: {json.dumps({'type': 'content_delta', 'content': result})}\n\n"
+        yield f"data: {json.dumps({'type': 'done', 'thread_id': thread_id, 'usage': usage_data})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+# ── Event Bus Status Endpoint ─────────────────────────
+
+@admin_router.get("/events/status")
+async def event_bus_status(user: dict = Depends(authenticate_admin)):
+    """Get the status of the event bus and agent event loops."""
+    try:
+        from app.events.bus import get_event_bus
+        bus = get_event_bus()
+        from app.agents.supervisor import get_supervisor
+        supervisor = get_supervisor()
+        return {
+            "event_bus_connected": bus._connected,
+            "event_loop_active": supervisor._event_loop_task is not None,
+            "agents": list(supervisor._get_agents().keys()) if hasattr(supervisor, "_get_agents") else [],
+        }
+    except Exception as e:
+        return {"error": str(e)}

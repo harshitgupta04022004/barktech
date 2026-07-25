@@ -24,6 +24,7 @@ export interface IInvoice extends Document {
   dispatchFrom?: string;
   transportDetails?: string;
   deliveryBasis?: string;
+  deliveryLabel?: string;
   refAttendedBy?: string;
   currency: string;
   items: IInvoiceItem[];
@@ -78,6 +79,7 @@ const invoiceSchema = new Schema<IInvoice>(
     dispatchFrom: { type: String },
     transportDetails: { type: String },
     deliveryBasis: { type: String },
+    deliveryLabel: { type: String, default: 'FACTORY DELIVERY' },
     refAttendedBy: { type: String },
     currency: { type: String, default: 'INR' },
     items: { type: [invoiceItemSchema], default: [] },

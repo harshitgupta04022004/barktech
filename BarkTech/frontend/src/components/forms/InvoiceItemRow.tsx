@@ -33,11 +33,11 @@ export function InvoiceItemRow({ index, register, errors, watch, onRemove, isLas
   return (
     <div className={cn(
       'grid grid-cols-1 gap-3 sm:grid-cols-12 sm:items-start',
-      !isLast && 'pb-4 border-b border-gray-200 dark:border-gray-700'
+      !isLast && 'pb-4 border-b border-border'
     )}>
       {/* Description */}
       <div className="sm:col-span-4">
-        <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">Description *</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Description *</label>
         <Input
           {...register(`items.${index}.description`, { required: 'Description is required' })}
           placeholder="Item description"
@@ -50,7 +50,7 @@ export function InvoiceItemRow({ index, register, errors, watch, onRemove, isLas
 
       {/* HSN Code */}
       <div className="sm:col-span-2">
-        <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">HSN Code</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">HSN Code</label>
         <Input
           {...register(`items.${index}.hsnCode`)}
           placeholder="HSN"
@@ -60,7 +60,7 @@ export function InvoiceItemRow({ index, register, errors, watch, onRemove, isLas
 
       {/* Quantity */}
       <div className="sm:col-span-1">
-        <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">Qty *</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Qty *</label>
         <Input
           type="number"
           {...register(`items.${index}.quantity`, {
@@ -79,7 +79,7 @@ export function InvoiceItemRow({ index, register, errors, watch, onRemove, isLas
 
       {/* Unit Price */}
       <div className="sm:col-span-2">
-        <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">Unit Price *</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Unit Price *</label>
         <Input
           type="number"
           {...register(`items.${index}.unitPrice`, {
@@ -99,7 +99,7 @@ export function InvoiceItemRow({ index, register, errors, watch, onRemove, isLas
 
       {/* GST Rate */}
       <div className="sm:col-span-1">
-        <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">GST %</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">GST %</label>
         <Input
           type="number"
           {...register(`items.${index}.gstRate`, {
@@ -117,8 +117,8 @@ export function InvoiceItemRow({ index, register, errors, watch, onRemove, isLas
 
       {/* Line Total */}
       <div className="sm:col-span-1">
-        <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">Total</label>
-        <div className="flex h-10 w-full items-center rounded-md border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-black dark:border-gray-600 dark:bg-gray-800 dark:text-white">
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Total</label>
+        <div className="flex h-10 w-full items-center rounded-md border border-border bg-muted px-3 text-sm font-medium text-foreground">
           ₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </div>
       </div>
@@ -130,7 +130,7 @@ export function InvoiceItemRow({ index, register, errors, watch, onRemove, isLas
           variant="ghost"
           size="icon"
           onClick={onRemove}
-          className="h-10 w-10 text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+          className="h-10 w-10 text-gray-400 hover:text-red-500 "
           title="Remove item"
         >
           <Trash2 className="h-4 w-4" />

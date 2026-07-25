@@ -1,7 +1,10 @@
-"""Web Research MCP for read-only web research.
+"""DuckDuckGo MCP for read-only web research.
 
 Provides URL fetching and web search capabilities for the agent.
 Uses httpx for fetching and DuckDuckGo for search.
+
+Renamed from WebMCP to DuckDuckGoMCP to make the actual provider explicit.
+Primarily used by ContentAgent for research, and available to LeadAgent for RFQ research.
 """
 
 import httpx

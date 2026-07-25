@@ -48,6 +48,8 @@ export interface Invoice {
 export interface InvoiceFilters extends PaginationParams {
   status?: InvoiceStatus;
   search?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface CreateInvoiceRequest {

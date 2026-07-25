@@ -49,11 +49,11 @@ export function ChatLayout() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-[#f5f0e8] dark:bg-[#1a1a1a]">
+    <div className="flex h-screen bg-background">
       {/* Sidebar — Thread List */}
       <div
         className={cn(
-          'flex-shrink-0 border-r border-[#e5e0d6] dark:border-[#3d3a35] transition-all duration-300 ease-in-out',
+          'flex-shrink-0 border-r border-border transition-all duration-300 ease-in-out',
           sidebarOpen ? 'w-[280px]' : 'w-0'
         )}
       >

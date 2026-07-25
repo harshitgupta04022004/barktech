@@ -17,12 +17,12 @@ export function LoadingSpinner({ className, size = 'md', text }: LoadingSpinnerP
     <div className={cn('flex flex-col items-center justify-center gap-3', className)}>
       <div
         className={cn(
-          'animate-spin rounded-full border-2 border-gray-200 border-t-primary dark:border-gray-700 dark:border-t-primary',
+          'animate-spin rounded-full border-2 border-border border-t-primary',
           sizeClasses[size]
         )}
       />
       {text && (
-        <p className="text-sm text-gray-600 dark:text-gray-400">{text}</p>
+        <p className="text-sm text-muted-foreground">{text}</p>
       )}
     </div>
   );
@@ -39,7 +39,7 @@ export function SkeletonLoader({ rows = 5, className }: SkeletonLoaderProps) {
       {Array.from({ length: rows }).map((_, i) => (
         <div
           key={i}
-          className="h-12 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800"
+          className="h-12 w-full animate-pulse rounded-lg bg-muted"
         />
       ))}
     </div>

@@ -15,4 +15,8 @@ export async function emailRoutes(app: FastifyInstance) {
   app.post('/send', emailController.send);
   app.get('/sequences', emailController.listSequences);
   app.post('/sequences', emailController.createSequence);
+
+  // Ad-hoc send (Email Agent / admin chat)
+  app.post('/adhoc/preview', emailController.adhocPreview);
+  app.post('/adhoc/send', emailController.adhocSend);
 }

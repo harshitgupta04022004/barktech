@@ -172,6 +172,53 @@ export class InvoiceService {
     return { byStatus: results, totalRevenue, totalCount };
   }
 
+  async getRevenueTrend(months: number = 12) {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+
+    const results = await Invoice.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: startDate },
+          status: { $nin: ['cancelled'] },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: '$createdAt' },
+            month: { $month: '$createdAt' },
+          },
+          revenue: { $sum: '$total' },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.year': 1, '_id.month': 1 } },
+    ]);
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const trend: { month: string; revenue: number; count: number }[] = [];
+
+    for (let i = 0; i < months; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i), 1);
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const found = results.find((r: any) => r._id.year === year && r._id.month === month);
+      trend.push({
+        month: monthNames[d.getMonth()],
+        revenue: found?.revenue || 0,
+        count: found?.count || 0,
+      });
+    }
+
+    return trend;
+  }
+
+  async deleteInvoice(id: string) {
+    const deleted = await invoiceRepository.delete(id);
+    if (!deleted) throw new AppError('Invoice not found', 404);
+  }
+
   async generatePdf(invoiceId: string) {
     const invoice = await invoiceRepository.findById(invoiceId);
     if (!invoice) throw new AppError('Invoice not found', 404);
@@ -188,6 +235,7 @@ export class InvoiceService {
       mode_of_delivery: invoice.modeOfDelivery || 'BY TRANSPORT',
       dispatch_from: invoice.dispatchFrom || '',
       ref_attended_by: invoice.refAttendedBy || '',
+      delivery_label: invoice.deliveryLabel || 'FACTORY DELIVERY',
       items: (invoice.items || []).map((item: any) => ({
         description: item.description,
         hsn_code: item.hsnCode || '',

@@ -20,7 +20,7 @@ export class StockRepository {
     const query: Record<string, any> = {};
 
     if (lowStockOnly) {
-      query.$expr = { $lte: ['$quantity', '$lowStockThreshold'] };
+      query.$expr = { $lte: ['$quantity', '$minStock'] };
     }
 
     if (search) {

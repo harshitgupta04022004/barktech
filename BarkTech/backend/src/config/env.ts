@@ -26,11 +26,12 @@ const envSchema = z.object({
   // Resend
   RESEND_API_KEY: z.string().optional(),
 
-  // S3 / R2
-  S3_ENDPOINT: z.string().optional(),
+  // S3 / Backblaze B2
+  S3_ENDPOINT_URL: z.string().optional(),
   S3_BUCKET: z.string().optional(),
-  S3_ACCESS_KEY: z.string().optional(),
-  S3_SECRET_KEY: z.string().optional(),
+  AWS_REGION: z.string().optional(),
+  AWS_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
 
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().optional(),

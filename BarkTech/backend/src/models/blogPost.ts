@@ -8,6 +8,8 @@ export interface IBlogPost extends Document {
   authorId?: mongoose.Types.ObjectId;
   imageUrl?: string;
   tags?: string;
+  productId?: mongoose.Types.ObjectId;
+  pageSlug?: string;
   reviewStatus: 'draft' | 'in_review' | 'approved' | 'rejected';
   reviewNotes?: string;
   reviewedBy?: mongoose.Types.ObjectId;
@@ -29,6 +31,8 @@ const blogPostSchema = new Schema<IBlogPost>(
     authorId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     imageUrl: { type: String },
     tags: { type: String },
+    productId: { type: Schema.Types.ObjectId, ref: 'Product', default: null },
+    pageSlug: { type: String, default: null },
     reviewStatus: {
       type: String,
       enum: ['draft', 'in_review', 'approved', 'rejected'],

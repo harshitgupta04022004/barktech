@@ -128,13 +128,13 @@ export function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
-      <Card className="w-full max-w-md dark:bg-gray-900 dark:border-gray-800">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-3">
             <img src="/images/bark-logo.png" alt="Bark Technologies" className="h-10" />
           </div>
-          <CardTitle className="text-xl text-black dark:text-white">Create Account</CardTitle>
+          <CardTitle className="text-xl text-foreground">Create Account</CardTitle>
           <CardDescription>Join Bark Technologies</CardDescription>
         </CardHeader>
         <CardContent>
@@ -146,9 +146,9 @@ export function SignUp() {
               <div className="rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-600 dark:text-green-400">{success}</div>
             )}
             <div>
-              <label className="text-sm font-medium text-black dark:text-white">Full Name</label>
+              <label className="text-sm font-medium text-foreground">Full Name</label>
               <div className="relative mt-1">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
                   value={name}
@@ -160,9 +160,9 @@ export function SignUp() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-black dark:text-white">Email</label>
+              <label className="text-sm font-medium text-foreground">Email</label>
               <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="email"
                   value={email}
@@ -174,9 +174,9 @@ export function SignUp() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-black dark:text-white">Password</label>
+              <label className="text-sm font-medium text-foreground">Password</label>
               <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -189,16 +189,16 @@ export function SignUp() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-black dark:text-white">Confirm Password</label>
+              <label className="text-sm font-medium text-foreground">Confirm Password</label>
               <div className="relative mt-1">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
@@ -217,16 +217,16 @@ export function SignUp() {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200 dark:border-gray-700" />
+              <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white dark:bg-gray-900 px-2 text-gray-500">or</span>
+              <span className="bg-background px-2 text-muted-foreground">or</span>
             </div>
           </div>
 
           <div ref={googleButtonRef} className="w-full flex justify-center"></div>
 
-          <div className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+          <div className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link to="/admin/login" className="font-medium text-primary hover:underline">
               Sign in

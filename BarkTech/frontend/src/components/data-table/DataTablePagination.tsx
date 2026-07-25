@@ -19,14 +19,14 @@ export function DataTablePagination<TData>({ table }: DataTablePaginationProps<T
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600 dark:text-gray-400">Rows per page</span>
+        <span className="text-sm text-muted-foreground">Rows per page</span>
         <select
           value={pageSize}
           onChange={(e) => {
             table.setPageSize(Number(e.target.value));
             table.setPageIndex(0);
           }}
-          className="h-9 rounded-md border border-gray-300 bg-white px-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          className="h-9 rounded-md border border-border bg-background px-2 text-sm text-foreground"
         >
           {PAGE_SIZE_OPTIONS.map((size) => (
             <option key={size} value={size}>
@@ -36,19 +36,19 @@ export function DataTablePagination<TData>({ table }: DataTablePaginationProps<T
         </select>
       </div>
 
-      <div className="text-sm text-gray-600 dark:text-gray-400">
+      <div className="text-sm text-muted-foreground">
         Showing {from} to {to} of {totalRows} entries
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-muted-foreground">
           Page {pageIndex + 1} of {totalPages}
         </span>
         <div className="flex items-center gap-1">
           <Button
             variant="outline"
             size="sm"
-            className="h-8 w-8 p-0 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="h-8 w-8 p-0 "
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
           >
@@ -57,7 +57,7 @@ export function DataTablePagination<TData>({ table }: DataTablePaginationProps<T
           <Button
             variant="outline"
             size="sm"
-            className="h-8 w-8 p-0 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="h-8 w-8 p-0 "
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
           >

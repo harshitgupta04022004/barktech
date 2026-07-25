@@ -10,7 +10,7 @@ interface ChatLog {
   sessionId: string;
   userEmail: string;
   userName: string;
-  source: 'client' | 'admin';
+  source: 'client' | 'admin' | 'super_admin';
   userMessage: string;
   assistantReply: string;
   model: string;
@@ -27,6 +27,7 @@ interface ChatLog {
 const sourceColors: Record<string, string> = {
   client: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
   admin: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+  super_admin: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
 };
 
 export function AdminChatHistory() {
@@ -76,7 +77,7 @@ export function AdminChatHistory() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-black dark:text-white">Chat Logs ({total})</h2>
+        <h2 className="text-2xl font-bold text-foreground">Chat Logs ({total})</h2>
       </div>
 
       {/* Stats Cards */}
@@ -85,16 +86,16 @@ export function AdminChatHistory() {
           {[
             { label: 'Total Logs', value: stats.totalLogs, icon: MessageSquare, color: 'text-blue-500' },
             { label: 'Total Tokens', value: stats.totalTokens.toLocaleString(), icon: Zap, color: 'text-yellow-500' },
-            { label: 'Total Cost', value: `$${stats.totalCost.toFixed(4)}`, icon: DollarSign, color: 'text-green-500' },
-            { label: 'Avg Latency', value: `${(stats.avgLatency / 1000).toFixed(1)}s`, icon: Clock, color: 'text-purple-500' },
+            { label: 'Total Cost', value: stats.totalCost > 0 ? `$${stats.totalCost.toFixed(4)}` : '$0.0000', icon: DollarSign, color: 'text-green-500' },
+            { label: 'Avg Latency', value: stats.avgLatency > 0 ? `${(stats.avgLatency / 1000).toFixed(1)}s` : '0s', icon: Clock, color: 'text-purple-500' },
             { label: 'Tool Calls', value: stats.toolCallsCount, icon: Zap, color: 'text-orange-500' },
           ].map((stat) => (
-            <Card key={stat.label} className="dark:bg-gray-900 dark:border-gray-800">
+            <Card key={stat.label}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
-                    <p className="text-xl font-bold text-black dark:text-white">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    <p className="text-xl font-bold text-foreground">{stat.value}</p>
                   </div>
                   <stat.icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
@@ -105,17 +106,17 @@ export function AdminChatHistory() {
       )}
 
       {/* Filters */}
-      <Card className="dark:bg-gray-900 dark:border-gray-800">
+      <Card>
         <CardContent className="p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Search by user, email, or message content..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <div className="flex gap-2">
-              {['all', 'client', 'admin'].map((s) => (
-                <Button key={s} variant={sourceFilter === s ? 'default' : 'outline'} size="sm" onClick={() => { setSourceFilter(s); setPage(1); }} className="dark:border-gray-600">
-                  {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+              {['all', 'client', 'admin', 'super_admin'].map((s) => (
+                <Button key={s} variant={sourceFilter === s ? 'default' : 'outline'} size="sm" onClick={() => { setSourceFilter(s); setPage(1); }}>
+                  {s === 'all' ? 'All' : s === 'super_admin' ? 'Super Admin' : s.charAt(0).toUpperCase() + s.slice(1)}
                 </Button>
               ))}
             </div>
@@ -125,9 +126,9 @@ export function AdminChatHistory() {
 
       {/* Chat Logs List */}
       {isLoading ? (
-        <div className="py-12 text-center text-gray-500 dark:text-gray-400">Loading chat logs...</div>
+        <div className="py-12 text-center text-muted-foreground">Loading chat logs...</div>
       ) : filtered.length === 0 ? (
-        <div className="py-12 text-center text-gray-500 dark:text-gray-400">
+        <div className="py-12 text-center text-muted-foreground">
           <MessageSquare className="mx-auto mb-3 h-10 w-10 opacity-30" />
           <p>No chat logs found.</p>
           <p className="text-sm mt-1">Logs are saved automatically when users chat with the AI agent.</p>
@@ -137,49 +138,49 @@ export function AdminChatHistory() {
           {filtered.map((log) => {
             const isExpanded = expandedId === log._id;
             return (
-              <Card key={log._id} className="dark:bg-gray-900 dark:border-gray-800 overflow-hidden">
+              <Card key={log._id} className="overflow-hidden">
                 <CardContent className="p-0">
                   {/* Header row */}
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : log._id)}
-                    className="w-full flex items-center gap-4 p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    className="w-full flex items-center gap-4 p-4 text-left hover:bg-accent transition-colors"
                   >
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-bold text-gray-600 dark:text-gray-400">
+                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
                       {(log.userEmail || log.userName || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-medium text-sm text-black dark:text-white truncate">
+                        <span className="font-medium text-sm text-foreground truncate">
                           {log.userEmail || log.userName || 'Anonymous'}
                         </span>
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${sourceColors[log.source] || ''}`}>
-                          {log.source}
+                          {log.source === 'super_admin' ? 'Super Admin' : log.source}
                         </span>
-                        <span className="text-[10px] text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                           {log.model}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[500px]">
+                      <p className="text-xs text-muted-foreground truncate max-w-[500px]">
                         <span className="font-medium">User:</span> {log.userMessage}
                       </p>
                     </div>
-                    <div className="hidden sm:flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                    <div className="hidden sm:flex items-center gap-4 text-xs text-muted-foreground flex-shrink-0">
                       <span>{formatLatency(log.latencyMs)}</span>
                       <span>{formatCost(log.cost)}</span>
-                      <span>{log.toolCalls.length > 0 ? `${log.toolCalls.length} tools` : '-'}</span>
+                      <span>{log.toolCalls?.length > 0 ? `${log.toolCalls.length} tools` : '-'}</span>
                     </div>
-                    <span className="text-xs text-gray-400 flex-shrink-0">
+                    <span className="text-xs text-muted-foreground flex-shrink-0">
                       {new Date(log.createdAt).toLocaleString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
-                    {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                    {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </button>
 
                   {/* Expanded details */}
                   {isExpanded && (
-                    <div className="border-t border-gray-200 dark:border-gray-700 p-4 space-y-4">
+                    <div className="border-t border-border p-4 space-y-4">
                       {/* User message */}
                       <div>
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">User Message</p>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">User Message</p>
                         <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-3 text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
                           {log.userMessage}
                         </div>
@@ -187,26 +188,26 @@ export function AdminChatHistory() {
 
                       {/* Assistant reply */}
                       <div>
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Assistant Reply</p>
-                        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Assistant Reply</p>
+                        <div className="bg-muted rounded-lg p-3 text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap max-h-48 overflow-y-auto">
                           {log.assistantReply}
                         </div>
                       </div>
 
                       {/* Tool calls */}
-                      {log.toolCalls.length > 0 && (
+                      {log.toolCalls && log.toolCalls.length > 0 && (
                         <div>
-                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Tool Calls ({log.toolCalls.length})</p>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Tool Calls ({log.toolCalls.length})</p>
                           <div className="space-y-2">
                             {log.toolCalls.map((tc, i) => (
-                              <div key={i} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-xs">
+                              <div key={i} className="bg-muted rounded-lg p-3 text-xs">
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className={`rounded px-1.5 py-0.5 font-mono font-medium ${tc.success ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'}`}>
                                     {tc.name}
                                   </span>
                                 </div>
-                                <p className="text-gray-600 dark:text-gray-400"><span className="font-medium">Input:</span> {tc.input}</p>
-                                <p className="text-gray-600 dark:text-gray-400 mt-1"><span className="font-medium">Output:</span> {tc.output?.substring(0, 200)}{tc.output?.length > 200 ? '...' : ''}</p>
+                                <p className="text-muted-foreground"><span className="font-medium">Input:</span> {tc.input}</p>
+                                <p className="text-muted-foreground mt-1"><span className="font-medium">Output:</span> {tc.output?.substring(0, 200)}{tc.output?.length > 200 ? '...' : ''}</p>
                               </div>
                             ))}
                           </div>
@@ -214,9 +215,11 @@ export function AdminChatHistory() {
                       )}
 
                       {/* Meta info */}
-                      <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
-                        <span>Session: <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">{log.sessionId}</code></span>
+                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                        <span>Session: <code className="bg-muted px-1 rounded">{log.sessionId}</code></span>
                         <span>Model: {log.model}</span>
+                        {log.inputTokens > 0 && <span>Input Tokens: {log.inputTokens.toLocaleString()}</span>}
+                        {log.outputTokens > 0 && <span>Output Tokens: {log.outputTokens.toLocaleString()}</span>}
                         {log.latencyMs && <span>Latency: {formatLatency(log.latencyMs)}</span>}
                         {log.cost > 0 && <span>Cost: {formatCost(log.cost)}</span>}
                       </div>
@@ -231,7 +234,7 @@ export function AdminChatHistory() {
           {total > 20 && (
             <div className="flex justify-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}>Previous</Button>
-              <span className="flex items-center text-sm text-gray-500 dark:text-gray-400">Page {page}</span>
+              <span className="flex items-center text-sm text-muted-foreground">Page {page}</span>
               <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={filtered.length < 20}>Next</Button>
             </div>
           )}

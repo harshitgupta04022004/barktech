@@ -44,11 +44,11 @@ const newsItems = [
 ];
 
 const categoryColors: Record<string, string> = {
-  Consignment: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-  Installation: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
-  Events: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-  'Company News': 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-  'Product Launch': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+  Consignment: 'bg-blue-100 text-blue-700',
+  Installation: 'bg-green-100 text-green-700',
+  Events: 'bg-purple-100 text-purple-700',
+  'Company News': 'bg-orange-100 text-orange-700',
+  'Product Launch': 'bg-yellow-100 text-yellow-700',
 };
 
 export function NewsPage() {
@@ -57,20 +57,20 @@ export function NewsPage() {
       <div className="mb-10">
         <div className="flex items-center gap-3 mb-2">
           <Newspaper className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold dark:text-white">News & Updates</h1>
+          <h1 className="text-3xl font-bold text-foreground">News & Updates</h1>
         </div>
-        <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
+        <p className="text-muted-foreground max-w-2xl">
           Stay updated with the latest from Bark Technologies — new consignments, installations, product arrivals, and company milestones.
         </p>
       </div>
 
       <div className="space-y-6">
         {newsItems.map((item) => (
-          <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow dark:bg-gray-900 dark:border-gray-800">
+          <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow border-border">
             <CardContent className="p-0">
               <div className="flex flex-col md:flex-row">
                 {/* Image / Video */}
-                <div className="w-full md:w-72 flex-shrink-0 bg-gray-100 dark:bg-gray-800 relative">
+                <div className="w-full md:w-72 flex-shrink-0 bg-muted relative">
                   {item.isVideo ? (
                     <div className="relative aspect-video md:aspect-auto md:h-full">
                       <video
@@ -98,17 +98,17 @@ export function NewsPage() {
                 {/* Content */}
                 <div className="flex-1 p-6">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${categoryColors[item.category] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
+                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${categoryColors[item.category] || 'bg-muted text-muted-foreground'}`}>
                       {item.category}
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
                       {new Date(item.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </span>
                   </div>
-                  <h3 className="text-lg font-semibold mb-1 text-black dark:text-white">{item.title}</h3>
+                  <h3 className="text-lg font-semibold mb-1 text-foreground">{item.title}</h3>
                   <p className="text-sm font-medium text-primary mb-2">{item.subtitle}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{item.excerpt}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.excerpt}</p>
                   <Link to={`/news/${item.id}`} className="mt-4 inline-flex items-center gap-1 text-sm text-primary font-medium hover:gap-2 transition-all">
                     Read More
                     <ArrowRight className="h-4 w-4" />
@@ -122,7 +122,7 @@ export function NewsPage() {
 
       {/* CTA */}
       <div className="mt-12 text-center">
-        <p className="text-gray-600 dark:text-gray-400 mb-4">Want to stay updated with our latest arrivals?</p>
+        <p className="text-muted-foreground mb-4">Want to stay updated with our latest arrivals?</p>
         <a href="tel:+918810597980">
           <Button size="lg" className="gap-2">
             Contact Us for More Information

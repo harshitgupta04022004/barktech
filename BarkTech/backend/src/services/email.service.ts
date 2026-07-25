@@ -108,6 +108,46 @@ export class EmailService {
     const deleted = await emailSequenceRepository.delete(id);
     if (!deleted) throw new AppError('Sequence not found', 404);
   }
+
+  // ── Ad-Hoc Send Support ─────────────────────────────
+  async resolveSegment(filter: Record<string, any>) {
+    const query: Record<string, any> = {};
+
+    // Always exclude unsubscribed and bounced
+    query.status = { $in: ['active'] };
+
+    // Apply segment filter fields
+    if (filter.source) query.source = filter.source;
+
+    return subscriberRepository.findAll({ page: 1, limit: 10000, ...query } as any)
+      .then(r => r.subscribers);
+  }
+
+  async sendBulkEmail(params: {
+    subscribers: any[];
+    subject: string;
+    html: string;
+    sendType: 'sequence' | 'ad_hoc';
+    triggeredBy?: string;
+  }) {
+    let sent = 0;
+    let failed = 0;
+
+    for (const subscriber of params.subscribers) {
+      try {
+        await this.sendEmail({
+          to: subscriber.email,
+          subject: params.subject,
+          html: params.html,
+        });
+        sent++;
+      } catch {
+        failed++;
+      }
+    }
+
+    return { sent, failed };
+  }
 }
 
 export const emailService = new EmailService();

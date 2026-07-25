@@ -78,11 +78,11 @@ export function SparePartsPage() {
   if (submitted) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-          <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+          <CheckCircle className="h-8 w-8 text-green-600" />
         </div>
-        <h1 className="text-3xl font-bold text-black dark:text-white">Request Submitted!</h1>
-        <p className="mt-4 text-gray-600 dark:text-gray-400">
+        <h1 className="text-3xl font-bold text-foreground">Request Submitted!</h1>
+        <p className="mt-4 text-muted-foreground">
           We have received your spare parts request. Our team will contact you shortly with availability and pricing details.
         </p>
         <Button onClick={() => setSubmitted(false)} className="mt-8" variant="outline">
@@ -98,8 +98,8 @@ export function SparePartsPage() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
           <Wrench className="h-6 w-6 text-primary" />
         </div>
-        <h1 className="text-3xl font-bold text-black dark:text-white">Spare Parts Inquiry</h1>
-        <p className="mt-3 max-w-xl mx-auto text-gray-600 dark:text-gray-400">
+        <h1 className="text-3xl font-bold text-foreground">Spare Parts Inquiry</h1>
+        <p className="mt-3 max-w-xl mx-auto text-muted-foreground">
           Need replacement parts for your Bark Technologies machinery? Fill in the form below and we will get back to you with availability.
         </p>
       </div>
@@ -109,14 +109,14 @@ export function SparePartsPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {/* Machine Selection */}
             <div>
-              <h2 className="text-lg font-semibold text-black dark:text-white mb-4">Machine & Part Details</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Machine & Part Details</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Machine Type *</label>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Machine Type *</label>
                   <select
                     {...register('machineType')}
                     className={cn(
-                      'flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100',
+                      'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                       errors.machineType && 'border-red-500'
                     )}
                   >
@@ -129,13 +129,13 @@ export function SparePartsPage() {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Part Description *</label>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Part Description *</label>
                   <textarea
                     {...register('partDescription')}
                     rows={3}
                     placeholder="Describe the spare part you need (e.g., cutting blade, rubber roller, conveyor belt, etc.)"
                     className={cn(
-                      'flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500',
+                      'flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                       errors.partDescription && 'border-red-500'
                     )}
                   />
@@ -143,7 +143,7 @@ export function SparePartsPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Quantity *</label>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Quantity *</label>
                   <Input
                     type="number"
                     {...register('quantity', { valueAsNumber: true, min: { value: 1, message: 'Min 1' } })}
@@ -157,30 +157,30 @@ export function SparePartsPage() {
 
             {/* Contact Information */}
             <div>
-              <h2 className="text-lg font-semibold text-black dark:text-white mb-4">Contact Information</h2>
+              <h2 className="text-lg font-semibold text-foreground mb-4">Contact Information</h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">First Name *</label>
+                  <label className="text-sm font-medium text-foreground mb-1 block">First Name *</label>
                   <Input {...register('firstName')} placeholder="John" className={cn(errors.firstName && 'border-red-500')} />
                   {errors.firstName && <p className="text-xs text-red-500 mt-1">{errors.firstName.message}</p>}
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Last Name *</label>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Last Name *</label>
                   <Input {...register('lastName')} placeholder="Doe" className={cn(errors.lastName && 'border-red-500')} />
                   {errors.lastName && <p className="text-xs text-red-500 mt-1">{errors.lastName.message}</p>}
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Email *</label>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Email *</label>
                   <Input {...register('email')} type="email" placeholder="john@company.com" className={cn(errors.email && 'border-red-500')} />
                   {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Phone *</label>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Phone *</label>
                   <Input {...register('phone')} placeholder="+91 98765 43210" className={cn(errors.phone && 'border-red-500')} />
                   {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone.message}</p>}
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Company Name *</label>
+                  <label className="text-sm font-medium text-foreground mb-1 block">Company Name *</label>
                   <Input {...register('company')} placeholder="Acme Industries" className={cn(errors.company && 'border-red-500')} />
                   {errors.company && <p className="text-xs text-red-500 mt-1">{errors.company.message}</p>}
                 </div>
@@ -189,12 +189,12 @@ export function SparePartsPage() {
 
             {/* Additional Notes */}
             <div>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Additional Notes</label>
+              <label className="text-sm font-medium text-foreground mb-1 block">Additional Notes</label>
               <textarea
                 {...register('additionalNotes')}
                 rows={2}
                 placeholder="Any model numbers, serial numbers, or other details..."
-                className="flex w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               />
             </div>
 

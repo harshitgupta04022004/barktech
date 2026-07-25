@@ -7,13 +7,15 @@ Requires WHATSAPP_BUSINESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID env vars.
 import httpx
 import os
 import logging
+from fastmcp import FastMCP
+from app.config import config
 
 logger = logging.getLogger(__name__)
 
 WHATSAPP_API_URL = "https://graph.facebook.com/v18.0"
 WHATSAPP_TOKEN = os.getenv("WHATSAPP_BUSINESS_TOKEN", "")
 WHATSAPP_PHONE_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "")
-ADMIN_PHONE = os.getenv("ADMIN_PHONE_NUMBER", "")
+ADMIN_PHONE = config.admin_phone_number
 
 
 async def _send_message(phone: str, message: str) -> dict:

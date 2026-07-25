@@ -275,6 +275,11 @@ VITE_ENABLE_ANALYTICS=true
 10. **Admin schedules installation/demo** -> Calendar MCP `create_event` (HITL) from admin AI chat or Installations UI
 11. **Admin publishes campaign** -> Claude Ads MCP (+ optional Canvas MCP creatives, Media MCP assets)
 12. **Lead agent researches RFQ** -> Web Research MCP (`fetch_url` / `search_web`) then native lead tools to update MongoDB
+13. **Admin creates product via AI chat** -> agent asks for name/media -> runs `upload_product_media` + `extract_product_info` -> shows `<PRODUCT_CARD>` -> admin confirms -> `create_product` (published=false) -> product appears on /admin/products
+14. **Admin edits product via AI chat** -> agent fetches current state -> asks what to change -> shows before/after diff -> admin confirms -> `update_product` -> product updates on /admin/products and /products (if published=true)
+15. **Admin deletes product via AI chat** -> agent shows `<DELETE_CONFIRM>` tag -> admin clicks Confirm -> `delete_product` -> product removed from all pages
+16. **Admin creates product via modal** -> 3-step modal (Details -> Files -> AI Processing) -> Step 3 calls `/agent/extract-from-upload` -> server-side PDF/DOCX extraction -> LLM structured output -> shows extracted fields for review -> admin clicks "Accept & Edit" -> prefill Step 1 fields -> save -> `POST /api/v1/products` -> product appears on /admin/products
+17. **Product with published=true** -> immediately visible on /products and /products/:slug (no caching layer, direct MongoDB query)
 
 ---
 
@@ -917,7 +922,9 @@ The admin AI chat is a **full-featured chat panel** within the admin dashboard t
 
 | Kind | Examples | UI behavior |
 |------|----------|-------------|
-| Native LangGraph | `create_invoice`, `generate_invoice_pdf`, `search_products`, `update_lead_status` | Show draft cards / PDF download links |
+| Native LangGraph (Invoice) | `create_invoice`, `generate_invoice_pdf`, `get_invoice`, `update_invoice`, `delete_invoice`, `list_invoices` | Show InvoiceCard with PDF download links |
+| Native LangGraph (Product) | `create_product`, `get_product`, `update_product`, `delete_product`, `list_products`, `upload_product_media`, `extract_product_info` | Show ProductCard with thumbnail, specs, media |
+| Native LangGraph (Lead) | `search_leads`, `update_lead_status` | Show lead summary cards |
 | WhatsApp MCP | `send_notification` | Confirm recipient + message preview (HITL) |
 | Email MCP | `send_email`, `send_template_email` | Confirm To/Subject; show “email queued” |
 | Media MCP | `presign_upload`, `get_public_url` | Show upload progress / CDN link |
@@ -966,6 +973,102 @@ Never render raw MCP credentials. Invoice PDF remains a **download URL**, not by
 ```
 
 **Agent invoice PDF (UI contract):** When tool `generate_invoice_pdf` returns `{ download_url, filename }`, render a download/open control. Do not expect PDF bytes in the SSE payload. Invoice tools are **native LangGraph tools** wrapping Python `InvoiceService` (WeasyPrint) — not Invoice MCP. See `python_ai_agent_architecture.md`.
+
+### Agent Output Tags (Frontend Parsers)
+
+The agent embeds structured data in its responses using special tags. The frontend parses these and renders rich UI components:
+
+| Tag | Format | Frontend Component |
+|-----|--------|-------------------|
+| `<INVOICE_CARD>{JSON}</INVOICE_CARD>` | Full invoice object | `InlineInvoiceCard` — expandable card with line items, bank details, Edit/Delete |
+| `<PRODUCT_CARD>{JSON}</PRODUCT_CARD>` | Full product object | `InlineProductCard` — thumbnail, specs, media, View/Edit/Delete |
+| `<DELETE_CONFIRM>invoice:{id}:{number}</DELETE_CONFIRM>` | Invoice delete request | Delete confirmation buttons |
+| `<DELETE_CONFIRM>product:{id}:{name}</DELETE_CONFIRM>` | Product delete request | Delete confirmation buttons |
+
+### Product Card Component (Inline in Chat)
+
+The `InlineProductCard` component renders a product summary card within the chat:
+
+```
++----------------------------------------------------+
+| [Thumbnail]  BT-200 Shrink Sleeve Machine          |
+|              Category: Shrink Sleeve                |
+|              Status: Draft    Featured: ★           |
+|              Models: BT-200 / BT-200 Pro            |
++----------------------------------------------------+
+| Specs:                                              |
+|   Speed: 200 bottles/min                           |
+|   Power: 3 kW                                      |
++----------------------------------------------------+
+| [View]  [Edit]  [Delete]                           |
++----------------------------------------------------+
+```
+
+**Actions:**
+- **View**: Sends `get_product:{product_id}` command to agent → returns full `<PRODUCT_CARD>` with expandable details
+- **Edit**: Sends `EDIT_PRODUCT:{product_id}` command to agent → agent asks what to change → shows diff → `update_product`
+- **Delete**: Sends `DELETE_PRODUCT:{product_id}:{product_name}` command to agent → agent shows `<DELETE_CONFIRM>` tag → frontend renders Confirm/Cancel buttons → on confirm sends `DELETE_PRODUCT_CONFIRM:{product_id}:{product_name}`
+
+### Invoice Card Component (Inline in Chat)
+
+The `InlineInvoiceCard` component renders an invoice summary card within the chat:
+
+```
++----------------------------------------------------+
+| Invoice #BARK26-27S006                             |
+| Customer: Raj Industries                           |
+| Amount: ₹45,000.00  |  Status: Draft               |
+| Date: 2026-07-20  |  Due: 2026-08-19              |
++----------------------------------------------------+
+| [Expand Details]                                   |
+|   Bill To / Ship To / Line Items / Bank Details     |
++----------------------------------------------------+
+| [Confirm]  [Details]  [Edit]  [Delete]             |
++----------------------------------------------------+
+```
+
+### Frontend Component Files
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `InlineInvoiceCard` | `AdminAI.tsx` | Invoice card with expand, Edit, Delete, Confirm |
+| `InlineProductCard` | `AdminAI.tsx` | Product card with thumbnail, specs, View/Edit/Delete |
+| `parseInvoiceCard` | `AdminAI.tsx` | Parses `<INVOICE_CARD>` JSON from agent response |
+| `parseProductCard` | `AdminAI.tsx` | Parses `<PRODUCT_CARD>` JSON from agent response |
+| `parseDeleteConfirm` | `AdminAI.tsx` | Parses `<DELETE_CONFIRM>` tag for invoices |
+| `parseProductDeleteConfirm` | `AdminAI.tsx` | Parses `<DELETE_CONFIRM>` tag for products |
+| `InvoiceCard` | `ChatMessage.tsx` | Invoice card for general/public chat |
+| `ProductCard` | `ChatMessage.tsx` | Product card for general/public chat |
+
+### Add Product Modal — AI Extraction Flow
+
+The `CreateProductModal` in `AdminProducts.tsx` integrates with the AI agent for automatic product info extraction:
+
+```
+Step 1: Details (name, description, specs, media)
+    ↓
+Step 2: Files (upload images, videos, PDF/DOCX spec sheets)
+    ↓
+Step 3: AI Processing
+    ↓
+    ┌─────────────────────────────────────────┐
+    │  Upload product via /api/products       │
+    │  Filter for PDF/DOCX files              │
+    │  POST /agent/extract-from-upload        │
+    │  → Server-side text extraction (PyPDF2  │
+    │    / python-docx)                       │
+    │  → LLM structured output               │
+    │  → Show extracted fields for review     │
+    │  [Accept & Edit] → prefill Step 1       │
+    │  [Skip] → proceed without extraction    │
+    └─────────────────────────────────────────┘
+```
+
+**Backend endpoint**: `POST /agent/extract-from-upload` (FastAPI)
+- Accepts multipart file upload + product_id
+- Extracts text from PDF/DOCX using PyPDF2 / python-docx
+- Calls `extract_product_info` tool with extracted text
+- Returns structured JSON: `{name, summary, description, models, leadTimeDays, warrantyMonths, categoryGuess, specs, confidence}`
 
 
 
@@ -1449,19 +1552,28 @@ Dark mode is supported via CSS variable overrides on `.dark` class.
 
 
 
-### Public Website Templates
+### Public Website
 
-For the public website, consider these starting points:
+**No templates purchased** — all public pages are built from scratch using shadcn/ui components and Tailwind CSS v4. This gives full control over design, branding (Bark's primary color #e65100), and performance.
 
+The existing shadcn/ui component library already provides all the building blocks needed:
 
-| Template      | Stack                         | Price |
-| ------------- | ----------------------------- | ----- |
-| **Xbuild**    | React + Next.js + Bootstrap 5 | $29   |
-| **Industril** | React + Next.js + Bootstrap 5 | $29   |
-| **Matrik**    | React + Next.js + SCSS        | $29   |
+| Page/Section | shadcn/ui Components Used |
+|--------------|--------------------------|
+| Hero Section | `Card`, `Button`, custom gradient backgrounds |
+| Product Catalog | `Card`, `Badge`, `Input` (search), `Select` (category filter) |
+| Product Detail | `Tabs` (specs/media/docs), `Carousel` (gallery), `Accordion` (FAQs) |
+| Contact Form | `Form`, `Input`, `Textarea`, `Select`, `Toast` (validation) |
+| Navbar/Footer | `NavigationMenu`, `Sheet` (mobile menu), `DropdownMenu` |
 
+Additional custom components for Bark-specific patterns:
+- `ProductCard` — Reusable card with image, title, category, model, CTA
+- `InstallationCard` — Showcase card with video embed, location, client info
+- `CaseStudyCard` — Client success story with before/after metrics
+- `StatsCounter` — Animated number counters for homepage metrics
+- `MegaDropdown` — Product category mega menu for navigation
 
-> **Note**: Since Bark uses Tailwind CSS (not Bootstrap), it may be cleaner to build the public pages from scratch using shadcn/ui components, which already provide all the patterns needed (hero sections, product cards, contact forms, etc.).
+> **Advantage**: Building from scratch means zero licensing costs, full ownership of code, and complete control over animations, transitions, and Bark's brand identity.
 
 ---
 
@@ -1561,105 +1673,398 @@ Multi-stage build:
 
 
 
-## 22. Implementation Roadmap
+## 22. Scenario & Story Flows
+
+This section describes complete user interaction scenarios showing how the frontend handles every major task. Each scenario follows a user journey from navigation to final system response.
+
+---
+
+### 22.1 Content Management Scenarios
+
+#### Scenario: Admin Creates a Blog Post via Form
+
+**Story Flow:**
+
+1. **Admin navigates to Content > Blog Post > Create** in the sidebar.
+
+2. **Frontend loads the create form** with shared fields (title, body, excerpt, cover image) and blog-specific fields.
+
+3. **Admin fills in the form:**
+   - Title: "BT-300 Shrink Sleeve Machine for Food Packaging"
+   - Body: Rich-text content about the machine
+   - Product: Selects "BT-300 Shrink Sleeve Machine" from dropdown
+   - Cover image: Picks from already-uploaded product media or uploads new via Canva MCP
+
+4. **Admin clicks "Save Draft."**
+
+5. **Frontend sends:** `POST /api/v1/content` with `content_type: "blog"`, all form fields.
+
+6. **Backend validates and creates** the blog post with `review_status: "draft"`.
+
+7. **Frontend shows:** Success toast. Blog post appears in the Content list with "Draft" badge.
+
+8. **Admin clicks "Submit for Review."**
+
+9. **Frontend sends:** `PATCH /api/v1/content/:id/review` with `review_status: "in_review"`.
+
+10. **Frontend shows:** Badge changes to yellow "In Review."
+
+---
+
+#### Scenario: Admin Reviews and Approves Content
+
+**Story Flow:**
+
+1. **Reviewer navigates to Content > All Content.**
+
+2. **Frontend loads the unified content list** with filters.
+
+3. **Reviewer sees items with "In Review" status** at the top (default sort).
+
+4. **Reviewer clicks on a case study** to open the edit form.
+
+5. **Frontend loads the case study** with all fields editable.
+
+6. **Reviewer clicks "Approve."**
+
+7. **Frontend sends:** `POST /api/v1/content/:id/approve`.
+
+8. **Backend validates** that reviewer is not the creator.
+
+9. **Frontend shows:** Badge changes to green "Approved." Publish button becomes available.
+
+---
+
+#### Scenario: Admin Rejects Content with Reason
+
+**Story Flow:**
+
+1. **Reviewer clicks "Reject" on a news article.**
+
+2. **Frontend shows a modal** with a required "Rejection Reason" textarea.
+
+3. **Reviewer types:** "Content needs more specific data about installation metrics."
+
+4. **Frontend sends:** `POST /api/v1/content/:id/reject` with `reason`.
+
+5. **Frontend shows:** Badge changes to red "Rejected." Rejection reason displayed as a banner at the top of the edit form.
+
+6. **Admin edits the draft** and resubmits. The rejection reason banner stays visible until resubmitted.
+
+---
+
+### 22.2 Social Media Publishing Scenarios
+
+#### Scenario: Admin Publishes Content to Social Media
+
+**Story Flow:**
+
+1. **Admin opens an approved content post** and clicks "Publish."
+
+2. **Frontend shows the publish flow:**
+   - Platform checkboxes: LinkedIn, Facebook, Instagram, Twitter
+   - No "publish everywhere" default — admin must select each platform
+   - Live preview per platform:
+     - Character count vs limit (e.g., "245/280 chars for Twitter")
+     - Image presence check for Instagram
+
+3. **Admin selects LinkedIn and Facebook.**
+
+4. **Frontend sends:** `POST /api/v1/social/publish` with `content_post_id`, `platforms: ["linkedin", "facebook"]`.
+
+5. **Frontend shows:** Per-platform status row appears immediately:
+   - LinkedIn: Gray "Queued" icon
+   - Facebook: Gray "Queued" icon
+
+6. **Status updates in real-time** as backend processes:
+   - LinkedIn: Green "Published" icon with link to post
+   - Facebook: Green "Published" icon with link to post
+
+7. **If a platform fails:** Red "Failed" icon with error message and "Retry" button.
+
+---
+
+#### Scenario: Admin Schedules Content for Future Publishing
+
+**Story Flow:**
+
+1. **Admin opens the publish flow** for an approved post.
+
+2. **Admin selects "Schedule for later"** instead of "Publish now."
+
+3. **Frontend shows a date/time picker.**
+
+4. **Admin selects Monday 9:00 AM.**
+
+5. **Frontend sends:** `POST /api/v1/social/publish` with `schedule_at: "2026-07-28T09:00:00Z"`.
+
+6. **Frontend shows:** Clock icon with scheduled time in the Content list. "Cancel Schedule" and "Reschedule" actions available.
+
+7. **At scheduled time:** Backend scheduler publishes the content. Status icons update automatically.
+
+---
+
+#### Scenario: Platform Connection Problem
+
+**Story Flow:**
+
+1. **Admin opens the publish flow.**
+
+2. **Frontend checks platform connection status** via `GET /social/platforms`.
+
+3. **Instagram shows as "Disconnected."**
+
+4. **Frontend shows:** Instagram checkbox disabled with "Reconnect" link.
+
+5. **Admin clicks "Reconnect"** and is taken to Social Media Settings.
+
+6. **After reconnecting:** Instagram checkbox becomes enabled.
+
+---
+
+### 22.3 AI Chat Content Card Scenarios
+
+#### Scenario: Admin Reviews Agent-Drafted Content in Chat
+
+**Story Flow:**
+
+1. **Admin asks agent to draft a blog post** in the AI chat.
+
+2. **Agent creates the draft** and presents an `InlineContentCard`.
+
+3. **Frontend renders the card:**
+   - Title: "BT-300 Shrink Sleeve Machine for Food Packaging"
+   - Truncated body preview
+   - Content type badge (blue "Blog")
+   - Status badge (gray "Draft")
+   - Actions: View, Edit, Approve, Reject, Delete
+
+4. **Admin clicks "Edit" on the card.**
+
+5. **Frontend shows an inline editor** with the current content.
+
+6. **Admin makes changes** and clicks "Save."
+
+7. **Frontend sends:** `PUT /api/v1/content/:id` with updated fields.
+
+8. **Frontend shows:** Card updates with the new content. "Submitted for Review" button appears.
+
+---
+
+#### Scenario: Admin Approves Content from Chat
+
+**Story Flow:**
+
+1. **Agent presents a content card** with "Submit for Review" action.
+
+2. **Admin clicks "Submit for Review."**
+
+3. **Frontend sends:** `PATCH /api/v1/content/:id/review` with `review_status: "in_review"`.
+
+4. **Frontend shows:** Card badge changes to "In Review." "Approve" and "Reject" actions become available.
+
+5. **Admin clicks "Approve."**
+
+6. **Frontend sends:** `POST /api/v1/content/:id/approve`.
+
+7. **Frontend shows:** Card badge changes to "Approved." "Publish" action becomes available.
+
+---
+
+### 22.4 Email Ad-Hoc Send Scenarios
+
+#### Scenario: Admin Sends Ad-Hoc Email via Chat
+
+**Story Flow:**
+
+1. **Admin asks agent:** "Send an email to all subscribers who downloaded the BT-300 datasheet about our new video tutorial."
+
+2. **Agent resolves the segment** and presents a preview in chat.
+
+3. **Frontend shows:**
+   - Recipient count: 338 active subscribers
+   - Exclusions: 4 (unsubscribed/bounced)
+   - Subject: "New Video Tutorial: BT-300 Setup Guide"
+   - Body preview: First 200 chars
+   - "Confirm Send" button
+
+4. **Admin clicks "Confirm Send."**
+
+5. **Agent sends the email** via the Email Agent.
+
+6. **Frontend shows:** "Email sent to 338 subscribers. 336 delivered, 2 bounced."
+
+---
+
+#### Scenario: Admin Sends Ad-Hoc Email via Form
+
+**Story Flow:**
+
+1. **Admin navigates to Email > Ad-Hoc Send.**
+
+2. **Frontend shows the ad-hoc send form:**
+   - Subject field
+   - Body editor (rich text)
+   - Segment filter (dropdown: All subscribers, by source, by product interest)
+
+3. **Admin fills in the form** and selects "All subscribers interested in shrink sleeve machines."
+
+4. **Admin clicks "Preview."**
+
+5. **Frontend sends:** `POST /api/v1/email/adhoc/preview` with `segment_filter`.
+
+6. **Backend resolves the segment** and returns count.
+
+7. **Frontend shows:** "458 subscribers will receive this email. (42 excluded.)"
+
+8. **Admin clicks "Send."**
+
+9. **Frontend sends:** `POST /api/v1/email/adhoc/send` with `confirm: true`.
+
+10. **Frontend shows:** Success toast with send statistics.
+
+---
+
+### 22.5 Empty and Error States
+
+#### Scenario: Empty Content List
+
+**Story Flow:**
+
+1. **Admin navigates to Content > All Content** for the first time.
+
+2. **No content exists yet.**
+
+3. **Frontend shows:** Empty state with icon and message: "No content drafted yet — try asking the AI Agent to draft your first post."
+
+4. **Admin clicks "Ask AI Agent"** button which opens the AI chat panel.
+
+---
+
+#### Scenario: Partially Failed Publish After Navigation
+
+**Story Flow:**
+
+1. **Admin publishes to 3 platforms.** LinkedIn and Facebook succeed, Twitter fails.
+
+2. **Admin navigates away** to another page.
+
+3. **Admin returns to the Content list.**
+
+4. **Frontend fetches fresh data** from the backend.
+
+5. **Per-platform status persists accurately** from the database:
+   - LinkedIn: Published
+   - Facebook: Published
+   - Twitter: Failed (with error message)
+
+6. **Admin can retry Twitter** from the list view.
+
+---
+
+## 23. Implementation Roadmap
 
 
 
 ### Phase 1: Foundation (Weeks 1-2)
 
-- Project scaffolding (Vite + React + TypeScript)
-- Tailwind CSS v4 setup + shadcn/ui installation
-- shadcn-admin template adaptation (sidebar, auth, theme)
-- API client layer with auth interceptors
-- Zustand stores (auth, UI, chat)
-- React Router configuration (all routes)
-- Login/Register pages
-- JWT token management (login, refresh, logout)
-- Protected route guards (admin, client)
-- Basic layout components (PublicLayout, AdminLayout)
+- [x] Project scaffolding (Vite + React + TypeScript)
+- [x] Tailwind CSS v4 setup + shadcn/ui installation
+- [x] shadcn-admin template adaptation (sidebar, auth, theme)
+- [x] API client layer with auth interceptors
+- [x] Zustand stores (auth, UI, chat)
+- [x] React Router configuration (all routes)
+- [x] Login/Register pages
+- [x] JWT token management (login, refresh, logout)
+- [x] Protected route guards (admin, client)
+- [x] Basic layout components (PublicLayout, AdminLayout)
 
 
 
 ### Phase 2: Public Website (Weeks 3-4)
 
-- Home page (hero, featured products, CTA sections)
-- Product catalog page (grid, filters, search, pagination)
-- Product detail page (specs, media gallery, documents)
-- Category page
-- Contact page (form, office locations)
-- About page
-- Navbar + Footer (responsive)
-- SEO meta tags
-- 404 page
+- [x] Home page (hero, featured products, CTA sections)
+- [x] Product catalog page (grid, filters, search, pagination)
+- [x] Product detail page (specs, media gallery, documents)
+- [x] Category page
+- [x] Contact page (form, office locations)
+- [x] About page
+- [x] Navbar + Footer (responsive)
+- [x] SEO meta tags
+- [x] 404 page
 
 
 
 ### Phase 3: Admin Dashboard Core (Weeks 5-6)
 
-- Dashboard overview (stat cards, charts, recent activity)
-- Product CRUD (list, create, edit, detail, review workflow)
-- Category CRUD
-- File upload component (presigned URL flow)
-- DataTable component (reusable, server-side pagination)
-- Form components (FormField, FileUpload)
-- Confirmation dialogs, toast notifications
-- Inquiry list + detail + status management
-- User management (list, create, edit, roles)
+- [x] Dashboard overview (stat cards, charts, recent activity)
+- [x] Product CRUD (list, create, edit, detail, review workflow)
+- [x] Category CRUD
+- [x] File upload component (presigned URL flow)
+- [x] DataTable component (reusable, server-side pagination)
+- [x] Form components (FormField, FileUpload)
+- [x] Confirmation dialogs, toast notifications
+- [x] Inquiry list + detail + status management
+- [x] User management (list, create, edit, roles)
 
 
 
 ### Phase 4: Business Logic (Weeks 7-8)
 
-- Invoice form (multi-section, dynamic line items, auto-calculations)
-- Invoice LLM review integration
-- Invoice PDF preview (client-side @react-pdf/renderer)
-- Invoice PDF generation trigger (server-side)
-- Invoice status recording (paid / partially_paid) — no payment gateway; admin marks cash/bank payment manually
-- Stock management (CRUD, reservation, logs)
-- GST calculation utilities
-- Amount-in-words conversion
+- [x] Invoice form (multi-section, dynamic line items, auto-calculations)
+- [x] Invoice LLM review integration
+- [x] Invoice PDF preview (client-side @react-pdf/renderer)
+- [x] Invoice PDF generation trigger (server-side)
+- [x] Invoice status recording (paid / partially_paid) — no payment gateway; admin marks cash/bank payment manually
+- [x] Stock management (CRUD, reservation, logs)
+- [x] GST calculation utilities
+- [x] Amount-in-words conversion
 
 
 
 ### Phase 5: Content and AI (Weeks 9-10)
 
-- CMS modules (case studies, news, blog, FAQs, pages, offices)
-- Blog review workflow
-- Installations showcase
-- Campaign content posts
-- Social media admin pages (platform connection, publish UI, analytics dashboard, AI caption generator)
-- Social media API client integration
-- Client-facing AI chat widget (floating)
-- AI chat SSE streaming integration
-- Admin AI chat interface (multi-agent + human-in-the-loop)
-- Admin AI MCP action cards (email send, WhatsApp notify, calendar event, campaign publish, media upload)
-- Chat history viewer (include MCP tool names in tool chain)
+- [x] CMS modules (case studies, news, blog, FAQs, pages, offices)
+- [ ] Blog review workflow 🔜
+- [ ] Installations showcase 🔜
+- [ ] Campaign content posts 🔜
+- [ ] Social media admin pages (platform connection, publish UI, analytics dashboard, AI caption generator) 🔜
+- [ ] Social media API client integration 🔜
+- [x] Client-facing AI chat widget (floating)
+- [x] AI chat SSE streaming integration
+- [x] Admin AI chat interface (multi-agent + human-in-the-loop)
+- [x] Admin AI chat — Invoice card with View/Edit/Delete actions
+- [x] Admin AI chat — Product card with View/Edit/Delete actions
+- [x] Admin AI chat — Delete confirmation flow with HITL
+- [x] Add Product modal — AI extraction integration (PDF/DOCX → LLM → prefill)
+- [ ] Admin AI MCP action cards (email send, WhatsApp notify, calendar event, campaign publish, media upload) 🔜
+- [ ] Chat history viewer (include MCP tool names in tool chain) 🔜
 
 
 
 ### Phase 6: Analytics and Email (Weeks 11-12)
 
-- Analytics dashboard (page views, product views, search trends)
-- Conversion funnel visualization
-- Email subscriber management
-- Email sequence viewer
-- AI observability dashboard (traces, cost, latency)
-- Trace detail view (tool chain, token breakdown)
+- [ ] Analytics dashboard (page views, product views, search trends) 🔜
+- [ ] Conversion funnel visualization 🔜
+- [ ] Email subscriber management 🔜
+- [ ] Email sequence viewer 🔜
+- [ ] AI observability dashboard (traces, cost, latency) 🔜
+- [ ] Trace detail view (tool chain, token breakdown) 🔜
 
 
 
 ### Phase 7: Polish and Deploy (Weeks 13-14)
 
-- Dark mode implementation
-- Loading states, skeletons, empty states
-- Error boundaries
-- Responsive testing (mobile, tablet, desktop)
-- Performance audit (Lighthouse, bundle analysis)
-- E2E tests (Cypress for critical flows)
-- SEO audit
-- Accessibility audit (WAI-ARIA, keyboard navigation)
-- Deployment (Vercel or Nginx + VPS)
-- Documentation
+- [ ] Dark mode implementation 🔜
+- [ ] Loading states, skeletons, empty states 🔜
+- [ ] Error boundaries 🔜
+- [ ] Responsive testing (mobile, tablet, desktop) 🔜
+- [ ] Performance audit (Lighthouse, bundle analysis) 🔜
+- [ ] E2E tests (Cypress for critical flows) 🔜
+- [ ] SEO audit 🔜
+- [ ] Accessibility audit (WAI-ARIA, keyboard navigation) 🔜
+- [ ] Deployment (Vercel or Nginx + VPS) 🔜
+- [ ] Documentation 🔜
 
 ---
 
@@ -1722,12 +2127,226 @@ Used for complex UI like DataTable, ChatWidget, FormField. Parent component mana
 | Audit Logs        | `/api/v1/audit/logs?action=&date=`       | GET        |
 | AI Chat (Client)  | `http://localhost:8000/api/client/chat`  | POST (SSE) |
 | AI Chat (Admin)   | `http://localhost:8000/api/admin/chat`   | POST (SSE) |
+| Agent extract-product-info | `http://localhost:8000/agent/extract-product-info` | POST |
+| Agent upload-product-media | `http://localhost:8000/agent/upload-product-media` | POST |
+| Agent extract-from-upload | `http://localhost:8000/agent/extract-from-upload` | POST (multipart) |
 | Agent MCP (indirect) | via admin chat tools only — no direct browser→MCP | WhatsApp / Email / Media / Calendar / Ads / Canvas / Web Research |
 
 
 ---
 
-*Document version: 1.0 | Last updated: 2026-07-17*
+*Document version: 1.1 | Last updated: 2026-07-25*
 *See also:* `nodeJs_backned_System_architecture.md` *for the Node.js backend*
 *See also:* `python_ai_agent_architecture.md` *for the AI agent layer*
 *See also:* `databse_schema.txt` *for complete database schema*
+
+---
+
+## Completed Implementation Status
+
+> Last updated: 2026-07-25
+
+This section documents all work that has been **implemented and verified** in the frontend.
+
+### Core Framework
+
+| Component | Status | File(s) |
+|-----------|--------|---------|
+| **React 19 + TypeScript** | Completed | `src/App.tsx` |
+| **Vite Build Tool** | Completed | `vite.config.ts` |
+| **Tailwind CSS v4** | Completed | `src/index.css` |
+| **shadcn/ui Components** | Completed | `src/components/ui/` |
+| **React Router v7** | Completed | `src/App.tsx` |
+| **TanStack Query** | Completed | `src/api/client.ts` |
+| **Zustand Stores** | Completed | `src/stores/` |
+
+### Public Website Pages (All Implemented)
+
+| Page | Route | File | Status |
+|------|-------|------|--------|
+| Home | `/` | `HomePage.tsx` | Completed |
+| Products | `/products` | `ProductsPage.tsx` | Completed |
+| Product Detail | `/products/:slug` | `ProductDetailPage.tsx` | Completed |
+| Category | `/products/category/:slug` | `CategoryPage.tsx` | Completed |
+| Contact | `/contact` | `ContactPage.tsx` | Completed |
+| Case Studies | `/case-studies` | `CaseStudiesPage.tsx` | Completed |
+| Case Study Detail | `/case-studies/:slug` | `CaseStudyDetailPage.tsx` | Completed |
+| News | `/news` | `NewsPage.tsx` | Completed |
+| News Detail | `/news/:slug` | `NewsDetailPage.tsx` | Completed |
+| Blog | `/blog` | `BlogPage.tsx` | Completed |
+| Blog Detail | `/blog/:slug` | `BlogDetailPage.tsx` | Completed |
+| FAQ | `/faq` | `FAQPage.tsx` | Completed |
+| Installations | `/installations` | `InstallationsPage.tsx` | Completed |
+| Spare Parts | `/spare-parts` | `SparePartsPage.tsx` | Completed |
+| Creasing Matrix | `/creasing-matrix` | `CreasingMatrixPage.tsx` | Completed |
+| Datasheet Download | `/download/:productId` | `DatasheetDownloadPage.tsx` | Completed |
+| Inquiry Form | `/inquiry` | `InquiryForm.tsx` | Completed |
+| Chat | `/chat` | `ChatPage.tsx` | Completed |
+| 404 | `*` | `NotFoundPage.tsx` | Completed |
+
+### Admin Dashboard Pages (All Implemented)
+
+| Page | Route | File | Status |
+|------|-------|------|--------|
+| Dashboard | `/admin` | `AdminDashboard.tsx` | Completed |
+| Login | `/admin/login` | `AdminLogin.tsx` | Completed |
+| AI Chat | `/admin/ai` | `AdminAI.tsx` | Completed |
+| Products | `/admin/products` | `AdminProducts.tsx` | Completed |
+| Leads | `/admin/leads` | `AdminLeads.tsx` | Completed |
+| Invoices | `/admin/invoices` | `AdminInvoices.tsx` | Completed |
+| Stock | `/admin/stock` | `AdminStock.tsx` | Completed |
+| Content | `/admin/content` | `AdminContent.tsx` | Completed |
+| Installations | `/admin/installations` | `AdminInstallations.tsx` | Completed |
+| Users | `/admin/users` | `AdminUsers.tsx` | Completed |
+| Chat History | `/admin/chat-history` | `AdminChatHistory.tsx` | Completed |
+| Settings | `/admin/settings` | `AdminSettings.tsx` | Completed |
+
+### AI Chat System (Fully Implemented)
+
+**Files**: `src/components/chat/ChatArea.tsx`, `ChatHeader.tsx`, `ChatMessage.tsx`, `ChatSettings.tsx`, `Composer.tsx`, `EmptyState.tsx`, `ThreadList.tsx`, `InlineContentCard.tsx`
+
+| Feature | Status |
+|---------|--------|
+| **SSE Streaming** | Completed — tokens stream in real-time via `fetch()` + `ReadableStream` |
+| **Thread Management** | Completed — create, switch, delete threads |
+| **Structured Response Parsing** | Completed — XML tags parsed and rendered as rich UI |
+| **Product Cards in Chat** | Completed — `<PRODUCT_CARD>` → `InlineProductCard` |
+| **Invoice Cards in Chat** | Completed — `<INVOICE_CARD>` → `InlineInvoiceCard` |
+| **Content Cards in Chat** | Completed — `<CONTENT_CARD>` → `InlineContentCard` |
+| **Delete Confirmations** | Completed — `<DELETE_CONFIRM>` → Confirm/Cancel buttons |
+| **Markdown Rendering** | Completed — bold, lists, links, code blocks |
+| **Typing Indicator** | Completed — shown before first token arrives |
+| **Copy Message** | Completed — click to copy AI response |
+| **Thread ID Fix** | Completed — uses actual `user._id` from localStorage for backend compatibility |
+
+**Chat Store** (`src/stores/chatStore.ts`):
+- `createThread`: Generates thread ID as `admin-${user._id}` (fixes 403 errors)
+- `setActiveThread`: Handles `null` threadId gracefully
+- `deleteThread`: Calls `agentChatApi.deleteSession(threadId)`
+- Messages persisted to localStorage
+
+### Structured Response System
+
+**File**: `src/components/chat/StructuredResponse.tsx`
+
+A unified parser and renderer for all structured XML tags returned by agents:
+
+| XML Tag | Renderer Component | Description |
+|---------|-------------------|-------------|
+| `<PRODUCT_CARD>` | `ProductCardRenderer` | Product thumbnail, specs, media, actions |
+| `<INVOICE_CARD>` | `InvoiceCardRenderer` | Invoice summary, line items, PDF download |
+| `<CONTENT_CARD>` | `ContentCardRenderer` | Blog/news/case study draft with actions |
+| `<LEAD_CARD>` | `LeadCardRenderer` | Lead summary with status and actions |
+| `<STOCK_ALERT>` | `StockAlertRenderer` | Low stock warning with reorder action |
+| `<DELETE_CONFIRM>` | `DeleteConfirmRenderer` | Confirmation dialog with Yes/No buttons |
+| `<MULTI_RESULT>` | `MultiResultRenderer` | Grouped result cards |
+| `<TABLE>` | `TableRenderer` | Data table with headers and rows |
+| `<CHART>` | `ChartRenderer` | Chart data visualization |
+| `<EMAIL_LAYOUT>` | `EmailLayoutRenderer` | Email preview card |
+
+### Showcase Components (New)
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `LiveShowcase` | `showcase/LiveShowcase.tsx` | Dynamic showcase section with live data |
+| `ProductCard` | `showcase/ProductCard.tsx` | Product card for showcase |
+| `InstallationCard` | `showcase/InstallationCard.tsx` | Installation showcase card |
+| `NewsCard` | `showcase/NewsCard.tsx` | News article card |
+| `ShowcaseCard` | `showcase/ShowcaseCard.tsx` | Generic showcase card |
+| `InfiniteMarquee` | `showcase/InfiniteMarquee.tsx` | Infinite scrolling marquee |
+| `useInfiniteMarquee` | `showcase/useInfiniteMarquee.ts` | Marquee animation hook |
+| `useLiveShowcase` | `showcase/useLiveShowcase.ts` | Live data fetching hook |
+| `showcaseApi` | `showcase/showcaseApi.ts` | Showcase API client |
+
+### Public UI Enhancements
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `SocialFloatBar` | `components/public/SocialFloatBar.tsx` | Floating social media links |
+| `InfiniteCarousel` | `components/public/InfiniteCarousel.tsx` | Infinite product carousel |
+| `AiChatWidget` | `components/public/AiChatWidget.tsx` | Floating AI chat widget |
+
+### Layout Components
+
+| Component | File | Status |
+|-----------|------|--------|
+| `PublicLayout` | `layout/PublicLayout.tsx` | Completed |
+| `AdminLayout` | `layout/AdminLayout.tsx` | Completed |
+| `ChatLayout` | `layout/ChatLayout.tsx` | Completed |
+| `Navbar` | `layout/Navbar.tsx` | Completed |
+| `Footer` | `layout/Footer.tsx` | Completed |
+
+### UI Components (shadcn/ui + Custom)
+
+| Component | File | Status |
+|-----------|------|--------|
+| `Button` | `ui/button.tsx` | Completed |
+| `Card` | `ui/card.tsx` | Completed |
+| `Input` | `ui/input.tsx` | Completed |
+| `ConfirmDialog` | `ui/ConfirmDialog.tsx` | Completed |
+| `EmptyState` | `ui/EmptyState.tsx` | Completed |
+| `LoadingSpinner` | `ui/LoadingSpinner.tsx` | Completed |
+| `StatusBadge` | `ui/StatusBadge.tsx` | Completed |
+| `ViewportContainer` | `ui/ViewportContainer.tsx` | Completed |
+| `DataTable` | `data-table/DataTable.tsx` | Completed |
+| `DataTableFilter` | `data-table/DataTableFilter.tsx` | Completed |
+| `DataTablePagination` | `data-table/DataTablePagination.tsx` | Completed |
+| `FileUpload` | `forms/FileUpload.tsx` | Completed |
+| `InvoiceItemRow` | `forms/InvoiceItemRow.tsx` | Completed |
+| `ProtectedRoute` | `auth/ProtectedRoute.tsx` | Completed |
+
+### Auth Pages
+
+| Page | File | Status |
+|------|------|--------|
+| Login | `AdminLogin.tsx` | Completed |
+| Sign Up | `SignUp.tsx` | Completed |
+| Forgot Password | `ForgotPassword.tsx` | Completed |
+| Auth Callback | `AuthCallback.tsx` | Completed |
+| Profile | `Profile.tsx` | Completed |
+
+### API Client Layer
+
+| File | Purpose | Status |
+|------|---------|--------|
+| `api/client.ts` | Fetch wrapper with auth headers | Completed |
+| `api/agentChat.ts` | AI agent SSE streaming | Completed |
+| `api/content.ts` | Content API client | Completed |
+
+### State Management
+
+| Store | File | Purpose |
+|-------|------|---------|
+| `chatStore` | `stores/chatStore.ts` | Chat messages, threads, streaming state |
+
+### Theme & Styling
+
+| File | Purpose |
+|------|---------|
+| `lib/theme.tsx` | Theme provider with light/dark mode |
+| `lib/constants.ts` | App constants (API URLs, storage keys) |
+| `index.css` | Tailwind CSS v4 with brand colors |
+
+### TypeScript Types
+
+| File | Purpose |
+|------|---------|
+| `types/content.ts` | Content post types |
+| `types/invoice.ts` | Invoice types |
+| `types/user.ts` | User types |
+
+### What's Working End-to-End
+
+1. **Public website**: All 19 pages rendering with responsive design
+2. **Admin dashboard**: Full CRUD for products, leads, invoices, stock, content
+3. **AI chat**: SSE streaming, thread management, structured response rendering
+4. **Product cards in chat**: Agent creates product → card rendered → View/Edit/Delete actions
+5. **Invoice cards in chat**: Agent creates invoice → card rendered → PDF download
+6. **Content cards in chat**: Agent drafts content → card rendered → Edit/Approve/Publish
+7. **Delete confirmations**: Agent proposes delete → confirmation dialog → execute
+8. **File upload**: Presigned S3 URLs for direct upload to Backblaze B2
+9. **Authentication**: Login, register, JWT refresh, role-based route guards
+10. **Data tables**: Server-side pagination, sorting, filtering for all admin lists
+11. **Showcase section**: Live product/installation/news cards with infinite marquee
+12. **Social float bar**: Floating social media links on public pages
+13. **Thread ID fix**: Uses actual user ID for backend compatibility (no more 403 errors)

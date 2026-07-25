@@ -63,7 +63,7 @@ export function DataTableFilter({
             placeholder={placeholder}
             value={filters.search}
             onChange={e => updateFilter('search', e.target.value)}
-            className="pl-9 dark:bg-gray-800 dark:border-gray-600"
+            className="pl-9  "
           />
           {filters.search && (
             <button
@@ -81,7 +81,7 @@ export function DataTableFilter({
           size="sm"
           onClick={() => setShowAdvanced(!showAdvanced)}
           className={cn(
-            'gap-2 dark:border-gray-600 dark:text-gray-200',
+            'gap-2  ',
             hasActiveFilters && 'border-primary text-primary'
           )}
         >
@@ -96,7 +96,7 @@ export function DataTableFilter({
 
         {/* Clear All */}
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400">
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-gray-500 hover:text-red-500  ">
             <X className="h-3 w-3" />
             Clear
           </Button>
@@ -105,10 +105,10 @@ export function DataTableFilter({
 
       {/* Advanced Filters Panel */}
       {showAdvanced && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4  /50">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-medium text-gray-600  mb-1.5 flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
                 From Date
               </label>
@@ -116,12 +116,12 @@ export function DataTableFilter({
                 type="date"
                 value={filters.dateFrom}
                 onChange={e => updateFilter('dateFrom', e.target.value)}
-                className="text-sm dark:bg-gray-800 dark:border-gray-600"
+                className="text-sm  "
               />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5 flex items-center gap-1.5">
+              <label className="text-xs font-medium text-gray-600  mb-1.5 flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5" />
                 To Date
               </label>
@@ -129,18 +129,18 @@ export function DataTableFilter({
                 type="date"
                 value={filters.dateTo}
                 onChange={e => updateFilter('dateTo', e.target.value)}
-                className="text-sm dark:bg-gray-800 dark:border-gray-600"
+                className="text-sm  "
               />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5 block">
+              <label className="text-xs font-medium text-gray-600  mb-1.5 block">
                 Status
               </label>
               <select
                 value={filters.status}
                 onChange={e => updateFilter('status', e.target.value)}
-                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2   "
               >
                 {statusOptions.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>

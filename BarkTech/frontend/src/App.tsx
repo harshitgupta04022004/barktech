@@ -17,6 +17,7 @@ import { CaseStudiesPage } from './pages/public/CaseStudiesPage';
 import { CaseStudyDetailPage } from './pages/public/CaseStudyDetailPage';
 import { InstallationsPage } from './pages/public/InstallationsPage';
 import { InquiryForm } from './pages/public/InquiryForm';
+import { ChatPage } from './pages/public/ChatPage';
 import { CategoryPage } from './pages/public/CategoryPage';
 import { SparePartsPage } from './pages/public/SparePartsPage';
 import { DatasheetDownloadPage } from './pages/public/DatasheetDownloadPage';
@@ -30,15 +31,12 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminProducts } from './pages/admin/AdminProducts';
 import { AdminLeads } from './pages/admin/AdminLeads';
 import { AdminInvoices } from './pages/admin/AdminInvoices';
-import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { AdminSettings } from './pages/admin/AdminSettings';
 import { AdminStock } from './pages/admin/AdminStock';
-import { AdminCMS } from './pages/admin/AdminCMS';
 import { AdminUsers } from './pages/admin/AdminUsers';
-import { AdminAudit } from './pages/admin/AdminAudit';
 import { AdminInstallations } from './pages/admin/AdminInstallations';
-import { AdminCampaigns } from './pages/admin/AdminCampaigns';
 import { AdminChatHistory } from './pages/admin/AdminChatHistory';
+import { AdminContent } from './pages/admin/AdminContent';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 export default function App() {
@@ -52,6 +50,7 @@ export default function App() {
         <Route path="/products/:slug" element={<ProductDetailPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/inquiry" element={<InquiryForm />} />
+        <Route path="/chat" element={<ChatPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/news/:id" element={<NewsDetailPage />} />
@@ -82,13 +81,10 @@ export default function App() {
           <Route path="leads" element={<AdminLeads />} />
           <Route path="invoices" element={<AdminInvoices />} />
           <Route path="stock" element={<AdminStock />} />
-          <Route path="cms" element={<AdminCMS />} />
           <Route path="users" element={<AdminUsers />} />
-          <Route path="audit" element={<AdminAudit />} />
           <Route path="installations" element={<AdminInstallations />} />
-          <Route path="campaigns" element={<AdminCampaigns />} />
+          <Route path="content" element={<AdminContent />} />
           <Route path="chat-logs" element={<AdminChatHistory />} />
-          <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
 

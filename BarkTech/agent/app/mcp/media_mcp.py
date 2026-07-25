@@ -11,12 +11,12 @@ from botocore.config import Config
 
 logger = logging.getLogger(__name__)
 
-# Configuration from environment
-S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL", "")  # For R2: https://<account_id>.r2.cloudflarestorage.com
-S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY", "")
-S3_SECRET_KEY = os.getenv("S3_SECRET_KEY", "")
-S3_BUCKET = os.getenv("S3_BUCKET", "bark-media")
-S3_REGION = os.getenv("S3_REGION", "auto")
+# Configuration from environment (matches BarkTech/.env)
+S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL", "")  # Backblaze B2: https://s3.us-east-005.backblazeb2.com
+S3_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID", "")
+S3_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+S3_BUCKET = os.getenv("S3_BUCKET", "barkTech")
+S3_REGION = os.getenv("AWS_REGION", "us-east-005")
 S3_PUBLIC_BASE_URL = os.getenv("S3_PUBLIC_BASE_URL", "")  # e.g. https://media.barktechnologies.in
 
 
@@ -38,9 +38,8 @@ def _build_public_url(key: str) -> str:
     if S3_PUBLIC_BASE_URL:
         return f"{S3_PUBLIC_BASE_URL}/{key}"
     if S3_ENDPOINT_URL:
-        # R2 public URL pattern
-        account_id = S3_ENDPOINT_URL.split("//")[1].split(".")[0]
-        return f"https://{S3_BUCKET}.{account_id}.r2.dev/{key}"
+        # Backblaze B2: https://<endpoint>/<bucket>/<key>
+        return f"{S3_ENDPOINT_URL}/{S3_BUCKET}/{key}"
     return f"https://{S3_BUCKET}.s3.{S3_REGION}.amazonaws.com/{key}"
 
 

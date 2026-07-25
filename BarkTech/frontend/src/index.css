@@ -1,114 +1,373 @@
 @import "tailwindcss";
 
 @theme {
-  /* Light mode */
+  /* === Light Mode Semantic Tokens === */
   --color-background: #ffffff;
-  --color-foreground: #000000;
+  --color-background-elevated: #f8fafc;
+  --color-background-surface: #f1f5f9;
+  --color-foreground: #0f172a;
+  --color-foreground-muted: #475569;
+  --color-foreground-subtle: #64748b;
+  
   --color-card: #ffffff;
-  --color-card-foreground: #000000;
+  --color-card-foreground: #0f172a;
+  --color-card-border: #e2e8f0;
+  
   --color-popover: #ffffff;
-  --color-popover-foreground: #000000;
+  --color-popover-foreground: #0f172a;
+  
+  /* Bark Brand Colors */
   --color-primary: #e65100;
+  --color-primary-hover: #bf360c;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f5f5f5;
-  --color-secondary-foreground: #111111;
-  --color-muted: #f5f5f5;
-  --color-muted-foreground: #555555;
-  --color-accent: #f5f5f5;
-  --color-accent-foreground: #111111;
-  --color-destructive: #ef4444;
+  
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+  
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #0f172a;
+  
+  /* Status Colors */
+  --color-destructive: #dc2626;
   --color-destructive-foreground: #ffffff;
-  --color-border: #d4d4d4;
-  --color-input: #d4d4d4;
+  --color-success: #16a34a;
+  --color-success-foreground: #ffffff;
+  --color-warning: #d97706;
+  --color-warning-foreground: #ffffff;
+  --color-info: #2563eb;
+  --color-info-foreground: #ffffff;
+  
+  /* Borders */
+  --color-border: #e2e8f0;
+  --color-border-subtle: #f1f5f9;
+  --color-input: #e2e8f0;
   --color-ring: #e65100;
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-info: #3b82f6;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  
+  /* Border Radius */
   --radius-lg: 0.5rem;
   --radius-md: 0.375rem;
   --radius-sm: 0.25rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  
+  /* Animation */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
 }
 
-/* Dark mode overrides */
+/* === Dark Mode Overrides === */
 .dark {
-  --color-background: #000000;
-  --color-foreground: #ffffff;
-  --color-card: #111111;
-  --color-card-foreground: #ffffff;
-  --color-popover: #111111;
-  --color-popover-foreground: #ffffff;
+  --color-background: #0f172a;
+  --color-background-elevated: #1e293b;
+  --color-background-surface: #334155;
+  --color-foreground: #f8fafc;
+  --color-foreground-muted: #94a3b8;
+  --color-foreground-subtle: #64748b;
+  
+  --color-card: #1e293b;
+  --color-card-foreground: #f8fafc;
+  --color-card-border: #334155;
+  
+  --color-popover: #1e293b;
+  --color-popover-foreground: #f8fafc;
+  
+  /* Bark Brand Colors - Dark */
   --color-primary: #ff6d00;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #1a1a1a;
-  --color-secondary-foreground: #e5e5e5;
-  --color-muted: #1a1a1a;
-  --color-muted-foreground: #b0b0b0;
-  --color-accent: #1a1a1a;
-  --color-accent-foreground: #e5e5e5;
-  --color-destructive: #dc2626;
+  --color-primary-hover: #ff9100;
+  --color-primary-foreground: #0f172a;
+  
+  --color-secondary: #1e293b;
+  --color-secondary-foreground: #f8fafc;
+  
+  --color-muted: #1e293b;
+  --color-muted-foreground: #94a3b8;
+  
+  --color-accent: #1e293b;
+  --color-accent-foreground: #f8fafc;
+  
+  /* Status Colors - Dark */
+  --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
-  --color-border: #333333;
-  --color-input: #333333;
+  --color-success: #22c55e;
+  --color-success-foreground: #0f172a;
+  --color-warning: #f59e0b;
+  --color-warning-foreground: #0f172a;
+  --color-info: #3b82f6;
+  --color-info-foreground: #ffffff;
+  
+  /* Borders - Dark */
+  --color-border: #334155;
+  --color-border-subtle: #1e293b;
+  --color-input: #334155;
   --color-ring: #ff6d00;
+  
+  /* Shadows - Dark */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.4);
 }
 
-body {
-  font-family: system-ui, -apple-system, sans-serif;
-  background: var(--color-background);
-  color: var(--color-foreground);
-  transition: background-color 0.2s, color 0.2s;
+/* === Global Base Styles === */
+@layer base {
+  html {
+    /* Use dynamic viewport units for proper mobile handling */
+    height: 100%;
+    height: 100dvh;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Global color transitions - NO layout jitter */
+  *, *::before, *::after {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: var(--duration-normal);
+  }
+
+  /* High contrast text */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Ensure headings use foreground color */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-foreground);
+    font-weight: 600;
+  }
+
+  /* Selection highlight */
+  ::selection {
+    background-color: var(--color-primary);
+    color: var(--color-primary-foreground);
+  }
+
+  /* Focus visible for accessibility */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-background);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-muted-foreground);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-foreground-muted);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-muted-foreground) var(--color-background);
+  }
 }
 
-/* Force high contrast on all text elements */
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* === Viewport Utility Classes === */
+@layer utilities {
+  /* Dynamic viewport height - adapts to browser chrome changes */
+  .min-h-dvh {
+    min-height: 100dvh;
+  }
+  
+  .h-dvh {
+    height: 100dvh;
+  }
+  
+  /* Small viewport height - minimum guaranteed visible area */
+  .min-h-svh {
+    min-height: 100svh;
+  }
+  
+  .h-svh {
+    height: 100svh;
+  }
+  
+  /* Large viewport height - maximum when browser UI hidden */
+  .min-h-lvh {
+    min-height: 100lvh;
+  }
+  
+  .h-lvh {
+    height: 100lvh;
+  }
+  
+  /* Safe area padding for notched devices */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  
+  .pl-safe {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+  
+  .pr-safe {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  
+  /* Glassmorphism utilities */
+  .glass {
+    background-color: color-mix(in srgb, var(--color-background) 70%, transparent);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+  }
+  
+  .glass-subtle {
+    background-color: color-mix(in srgb, var(--color-background) 85%, transparent);
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+  }
+  
+  /* Smooth text rendering for different backgrounds */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  
+  /* Content width for readability */
+  .content-width {
+    max-width: 65ch;
+  }
 }
 
-/* Ensure all headings use foreground color for maximum contrast */
-h1, h2, h3, h4, h5, h6 {
-  color: var(--color-foreground);
-}
-
-/* Prose styles for markdown in dark mode */
+/* === Prose Styles for Dark Mode === */
 .dark .prose {
-  --tw-prose-body: #d1d5db;
-  --tw-prose-headings: #ffffff;
-  --tw-prose-lead: #9ca3af;
+  --tw-prose-body: #cbd5e1;
+  --tw-prose-headings: #f8fafc;
+  --tw-prose-lead: #94a3b8;
   --tw-prose-links: #fb923c;
-  --tw-prose-bold: #ffffff;
-  --tw-prose-counters: #9ca3af;
-  --tw-prose-bullets: #6b7280;
-  --tw-prose-hr: #374151;
-  --tw-prose-quotes: #f3f4f6;
+  --tw-prose-bold: #f8fafc;
+  --tw-prose-counters: #94a3b8;
+  --tw-prose-bullets: #64748b;
+  --tw-prose-hr: #334155;
+  --tw-prose-quotes: #f1f5f9;
   --tw-prose-quote-borders: #e65100;
-  --tw-prose-captions: #9ca3af;
-  --tw-prose-code: #f3f4f6;
-  --tw-prose-pre-code: #d1d5db;
-  --tw-prose-pre-bg: #111827;
-  --tw-prose-th-borders: #4b5563;
-  --tw-prose-td-borders: #374151;
+  --tw-prose-captions: #94a3b8;
+  --tw-prose-code: #f1f5f9;
+  --tw-prose-pre-code: #cbd5e1;
+  --tw-prose-pre-bg: #0f172a;
+  --tw-prose-th-borders: #475569;
+  --tw-prose-td-borders: #334155;
 }
 
-/* Light mode prose */
 .prose {
-  --tw-prose-body: #374151;
-  --tw-prose-headings: #000000;
+  --tw-prose-body: #334155;
+  --tw-prose-headings: #0f172a;
   --tw-prose-links: #e65100;
-  --tw-prose-bold: #000000;
+  --tw-prose-bold: #0f172a;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
+/* === Animation Keyframes === */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-::-webkit-scrollbar-thumb {
-  background: #a3a3a3;
-  border-radius: 3px;
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
-.dark ::-webkit-scrollbar-thumb {
-  background: #525252;
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation utility classes */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn var(--duration-normal) ease-out;
+  }
+  
+  .animate-slide-in-bottom {
+    animation: slideInFromBottom var(--duration-slow) ease-out;
+  }
+  
+  .animate-slide-in-top {
+    animation: slideInFromTop var(--duration-slow) ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn var(--duration-normal) ease-out;
+  }
+}
+
+/* === Print Styles === */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .no-print {
+    display: none !important;
+  }
 }

@@ -92,14 +92,14 @@ function FAQAccordion({ item }: { item: FAQItem }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="border-b border-gray-200 dark:border-gray-800">
+    <div className="border-b border-border">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-full items-center justify-between py-5 text-left transition-colors hover:text-primary"
       >
-        <span className="text-base font-medium text-black dark:text-white pr-4">{item.question}</span>
+        <span className="text-base font-medium text-foreground pr-4">{item.question}</span>
         <ChevronDown
-          className={`h-5 w-5 flex-shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400 ${
+          className={`h-5 w-5 flex-shrink-0 text-muted-foreground transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -109,7 +109,7 @@ function FAQAccordion({ item }: { item: FAQItem }) {
           isOpen ? 'max-h-96 pb-5' : 'max-h-0'
         }`}
       >
-        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{item.answer}</p>
+        <p className="text-muted-foreground leading-relaxed">{item.answer}</p>
       </div>
     </div>
   );
@@ -131,14 +131,14 @@ export function FAQPage() {
   }, [search, activeCategory]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-muted/50">
       {/* Hero Section */}
-      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+      <div className="bg-background border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl font-bold text-black dark:text-white sm:text-4xl">
+          <h1 className="text-3xl font-bold text-foreground sm:text-4xl">
             Frequently Asked Questions
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-gray-600 dark:text-gray-400">
+          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
             Find answers to common questions about our products, services, and support. Can't find what you're looking for? Contact our team.
           </p>
         </div>
@@ -147,12 +147,12 @@ export function FAQPage() {
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Search */}
         <div className="relative mb-8">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search questions..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 dark:bg-gray-800 dark:border-gray-600"
+            className="pl-9"
           />
         </div>
 
@@ -164,7 +164,7 @@ export function FAQPage() {
               variant={activeCategory === cat ? 'default' : 'outline'}
               size="sm"
               onClick={() => setActiveCategory(cat)}
-              className="whitespace-nowrap dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+              className="whitespace-nowrap"
             >
               {cat}
             </Button>
@@ -172,14 +172,14 @@ export function FAQPage() {
         </div>
 
         {/* FAQ List */}
-        <Card className="dark:bg-gray-900 dark:border-gray-800">
+        <Card className="bg-card border-border">
           <CardContent className="p-0 divide-y-0">
             {filteredFAQs.length > 0 ? (
               filteredFAQs.map((faq) => (
                 <FAQAccordion key={faq.id} item={faq} />
               ))
             ) : (
-              <div className="py-16 text-center text-gray-500 dark:text-gray-400">
+              <div className="py-16 text-center text-muted-foreground">
                 <Search className="mx-auto mb-4 h-12 w-12 opacity-50" />
                 <p>No questions match your search criteria.</p>
               </div>
@@ -188,9 +188,9 @@ export function FAQPage() {
         </Card>
 
         {/* Still have questions CTA */}
-        <div className="mt-12 rounded-xl border border-gray-200 bg-white p-8 text-center dark:border-gray-800 dark:bg-gray-900">
-          <h2 className="mb-2 text-xl font-bold text-black dark:text-white">Still Have Questions?</h2>
-          <p className="mb-6 text-gray-600 dark:text-gray-400">
+        <div className="mt-12 rounded-xl border border-border bg-card p-8 text-center">
+          <h2 className="mb-2 text-xl font-bold text-foreground">Still Have Questions?</h2>
+          <p className="mb-6 text-muted-foreground">
             Our team is here to help. Reach out to us and we'll get back to you as soon as possible.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
@@ -201,7 +201,7 @@ export function FAQPage() {
               </Button>
             </a>
             <a href="https://wa.me/918810597980" target="_blank" rel="noopener noreferrer">
-              <Button size="lg" variant="outline" className="gap-2 dark:border-gray-600 dark:text-gray-200">
+              <Button size="lg" variant="outline" className="gap-2">
                 <MessageCircle className="h-4 w-4" />
                 WhatsApp Us
                 <ArrowRight className="h-4 w-4" />

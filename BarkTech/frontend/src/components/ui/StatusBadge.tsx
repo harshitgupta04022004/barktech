@@ -21,14 +21,14 @@ const statusStyles: Record<string, string> = {
   won: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
   lost: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
   // Invoice statuses
-  draft: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  draft: 'bg-muted text-muted-foreground',
   sent: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
   paid: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
   overdue: 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300',
-  cancelled: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+  cancelled: 'bg-muted text-muted-foreground',
   // Product statuses
   active: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
-  inactive: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+  inactive: 'bg-muted text-muted-foreground',
   published: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
   // Installation statuses
   'completed': 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
@@ -46,7 +46,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     <span
       className={cn(
         'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize',
-        statusStyles[status] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+        statusStyles[status] || 'bg-muted text-muted-foreground',
         className
       )}
     >

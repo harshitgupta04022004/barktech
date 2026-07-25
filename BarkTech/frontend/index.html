@@ -6,6 +6,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Bark Technologies — B2B machinery platform for die cutting, laminating, and printing equipment" />
     <title>Bark Technologies</title>
+    
+    <!-- FOUC Prevention: Blocking script to apply theme before first paint -->
+    <script>
+      (function() {
+        const THEME_KEY = 'bark-theme';
+        const DARK_CLASS = 'dark';
+        
+        // Check for stored preference, then system preference
+        const stored = localStorage.getItem(THEME_KEY);
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const shouldApplyDark = stored === 'dark' || (!stored && prefersDark);
+        
+        if (shouldApplyDark) {
+          document.documentElement.classList.add(DARK_CLASS);
+        } else {
+          document.documentElement.classList.remove(DARK_CLASS);
+        }
+        
+        // Set meta theme-color for mobile browsers
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) {
+          metaTheme.setAttribute('content', shouldApplyDark ? '#0f172a' : '#ffffff');
+        }
+      })();
+    </script>
+    
+    <!-- Viewport meta with viewport-fit for safe areas -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#ffffff" />
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>
   <body>
     <div id="root"></div>

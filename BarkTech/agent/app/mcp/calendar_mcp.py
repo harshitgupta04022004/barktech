@@ -1,7 +1,10 @@
-"""Calendar MCP - Google Calendar integration for scheduling.
+"""Calendar MCP — Google Calendar integration for scheduling.
 
 Provides calendar event management using Google Calendar API.
 Supports create, list, cancel, and get events.
+
+These are native LangGraph @tools that call the Google Calendar API directly.
+They also serve as the implementation behind the Calendar FastMCP server.
 
 Requires:
 - GOOGLE_CALENDAR_API_KEY for API access

@@ -10,6 +10,11 @@ export interface INewsArticle extends Document {
   sourceUrl?: string;
   authorId?: mongoose.Types.ObjectId;
   tags?: string;
+  pageSlug?: string;
+  reviewStatus: 'draft' | 'in_review' | 'approved' | 'rejected';
+  reviewNotes?: string;
+  reviewedBy?: mongoose.Types.ObjectId;
+  reviewedAt?: Date;
   published: boolean;
   publishedAt?: Date;
   metaTitle?: string;
@@ -33,6 +38,15 @@ const newsArticleSchema = new Schema<INewsArticle>(
     sourceUrl: { type: String },
     authorId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
     tags: { type: String },
+    pageSlug: { type: String, default: null },
+    reviewStatus: {
+      type: String,
+      enum: ['draft', 'in_review', 'approved', 'rejected'],
+      default: 'draft',
+    },
+    reviewNotes: { type: String },
+    reviewedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    reviewedAt: { type: Date },
     published: { type: Boolean, default: false },
     publishedAt: { type: Date },
     metaTitle: { type: String },

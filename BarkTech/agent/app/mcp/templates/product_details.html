@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>{{product_name}} — Bark Technology</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style type="text/css">
+    /* Reset */
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f4f5f7; }
+    /* Mobile */
+    @media only screen and (max-width: 620px) {
+      .email-container { width: 100% !important; max-width: 100% !important; }
+      .fluid { max-width: 100% !important; height: auto !important; margin-left: auto !important; margin-right: auto !important; }
+      .stack-column { display: block !important; width: 100% !important; max-width: 100% !important; direction: ltr !important; }
+      .padding-mobile { padding-left: 16px !important; padding-right: 16px !important; }
+      .center-mobile { text-align: center !important; }
+      .hide-mobile { display: none !important; }
+      .btn-mobile { display: block !important; width: 100% !important; max-width: 300px !important; margin-left: auto !important; margin-right: auto !important; }
+      .spec-key { width: 40% !important; }
+      .spec-val { width: 60% !important; }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f5f7; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <center style="width: 100%; background-color: #f4f5f7;">
+    <div style="display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; mso-hide: all;">
+      {{product_name}} — {{product_tagline}}
+    </div>
+
+    <!-- EMAIL CONTAINER -->
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" class="email-container" style="margin: 0 auto; max-width: 600px;">
+
+      <!-- ==================== HEADER ==================== -->
+      <tr>
+        <td style="background-color: #0d1b2a; padding: 28px 36px; text-align: center; border-radius: 12px 12px 0 0;" class="padding-mobile">
+          <a href="https://barktechnologies.in" target="_blank" style="text-decoration: none;">
+            <img src="{{logo_url}}" alt="Bark Technology" width="160" style="display: inline-block; max-width: 160px; height: auto; border: 0;">
+          </a>
+        </td>
+      </tr>
+      <tr>
+        <td style="background-color: #e65100; height: 4px; font-size: 0; line-height: 0;">&nbsp;</td>
+      </tr>
+
+      <!-- ==================== HERO: PRODUCT IMAGE ==================== -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 0;" class="padding-mobile">
+          <a href="{{product_url}}" target="_blank" style="text-decoration: none;">
+            <img src="{{product_image_url}}" alt="{{product_name}}" width="600" style="display: block; width: 100%; max-width: 600px; height: auto; border: 0;" class="fluid">
+          </a>
+        </td>
+      </tr>
+
+      <!-- GALLERY THUMBNAILS (optional — 2-3 images) -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 8px 20px 0 20px;" class="padding-mobile">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <!-- {{#each gallery_images}} -->
+              <td width="33%" style="padding: 4px; text-align: center;" class="stack-column">
+                <a href="{{this.url}}" target="_blank" style="text-decoration: none;">
+                  <img src="{{this.image}}" alt="{{this.alt}}" width="180" style="display: block; width: 100%; max-width: 180px; height: auto; border-radius: 6px; border: 1px solid #e8e8e8;" class="fluid">
+                </a>
+              </td>
+              <!-- {{/each}} -->
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- ==================== PRODUCT INFO ==================== -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 24px 36px 0 36px;" class="padding-mobile">
+          <!-- Category Badge -->
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+              <td style="background-color: #fff3e0; border-radius: 4px; padding: 4px 10px;">
+                <span style="font-size: 11px; font-weight: 600; color: #e65100; text-transform: uppercase; letter-spacing: 0.5px;">{{product_category}}</span>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Product Name -->
+          <h1 style="margin: 12px 0 0; font-size: 24px; font-weight: 700; color: #0d1b2a; line-height: 1.3;">{{product_name}}</h1>
+
+          <!-- Price Section -->
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 12px;">
+            <tr>
+              <td style="padding-right: 10px;">
+                <span style="font-size: 26px; font-weight: 800; color: #e65100;">{{product_price}}</span>
+              </td>
+              <!-- {{#if original_price}} -->
+              <td style="padding-right: 10px; vertical-align: middle;">
+                <span style="font-size: 16px; color: #999; text-decoration: line-through;">{{original_price}}</span>
+              </td>
+              <!-- {{/if}} -->
+              <!-- {{#if discount_percent}} -->
+              <td style="vertical-align: middle;">
+                <span style="display: inline-block; background-color: #e65100; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px;">{{discount_percent}} OFF</span>
+              </td>
+              <!-- {{/if}} -->
+            </tr>
+          </table>
+
+          <!-- Stock Status -->
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top: 10px;">
+            <tr>
+              <td>
+                <!-- {{#if (eq stock_status "In Stock")}} -->
+                <span style="display: inline-block; background-color: #e8f5e9; color: #2e7d32; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 4px;">&#10003; {{stock_status}}</span>
+                <!-- {{else}} -->
+                <span style="display: inline-block; background-color: #fff3e0; color: #e65100; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 4px;">&#9888; {{stock_status}}</span>
+                <!-- {{/if}} -->
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <!-- ==================== TAGLINE ==================== -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 16px 36px 0 36px;" class="padding-mobile">
+          <p style="margin: 0; font-size: 15px; color: #333; font-weight: 600; line-height: 1.5;">{{product_tagline}}</p>
+        </td>
+      </tr>
+
+      <!-- ==================== DESCRIPTION ==================== -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 12px 36px 0 36px;" class="padding-mobile">
+          <p style="margin: 0; font-size: 14px; color: #555b6e; line-height: 1.7;">{{product_description}}</p>
+        </td>
+      </tr>
+
+      <!-- ==================== KEY FEATURES ==================== -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 20px 36px 0 36px;" class="padding-mobile">
+          <h2 style="margin: 0 0 12px; font-size: 17px; font-weight: 700; color: #0d1b2a;">Key Features</h2>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <!-- {{#each feature_list}} -->
+            <tr>
+              <td width="36" valign="top" style="padding: 6px 8px 6px 0;">
+                <span style="font-size: 16px;">{{this.feature_icon}}</span>
+              </td>
+              <td valign="top" style="padding: 6px 0; font-size: 14px; color: #444b59; line-height: 1.5;">{{this.feature_text}}</td>
+            </tr>
+            <!-- {{/each}} -->
+          </table>
+        </td>
+      </tr>
+
+      <!-- ==================== SPECS TABLE ==================== -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 20px 36px 0 36px;" class="padding-mobile">
+          <h2 style="margin: 0 0 12px; font-size: 17px; font-weight: 700; color: #0d1b2a;">Specifications</h2>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #e8e8e8; border-radius: 8px; overflow: hidden; border-collapse: collapse;">
+            <!-- {{#each spec_rows}} -->
+            <tr>
+              <td width="40%" style="padding: 10px 14px; background-color: {{#if @odd}}#fafafa{{else}}#ffffff{{/if}}; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #888; font-weight: 500;" class="spec-key">{{this.key}}</td>
+              <td width="60%" style="padding: 10px 14px; background-color: {{#if @odd}}#fafafa{{else}}#ffffff{{/if}}; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #222; font-weight: 600;" class="spec-val">{{this.value}}</td>
+            </tr>
+            <!-- {{/each}} -->
+          </table>
+        </td>
+      </tr>
+
+      <!-- ==================== SOCIAL PROOF (optional) ==================== -->
+      <!-- {{#if product_rating}} -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 20px 36px 0 36px;" class="padding-mobile">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8f9fb; border-radius: 8px; border: 1px solid #e8e8e8;">
+            <tr>
+              <td style="padding: 20px 24px;">
+                <!-- Rating Stars -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td style="font-size: 18px; color: #f59e0b; letter-spacing: 2px;">{{product_rating}}</td>
+                    <td style="padding-left: 8px; font-size: 13px; color: #888;">({{review_count}} reviews)</td>
+                  </tr>
+                </table>
+                <!-- Testimonial -->
+                <!-- {{#if testimonial_text}} -->
+                <p style="margin: 12px 0 0; font-size: 14px; color: #555b6e; line-height: 1.6; font-style: italic;">&ldquo;{{testimonial_text}}&rdquo;</p>
+                <p style="margin: 6px 0 0; font-size: 12px; color: #999; font-weight: 600;">— {{testimonial_author}}</p>
+                <!-- {{/if}} -->
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <!-- {{/if}} -->
+
+      <!-- ==================== CTA BUTTONS ==================== -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 24px 36px 0 36px; text-align: center;" class="padding-mobile">
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td align="center">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <!-- Primary: Buy Now -->
+                    <td style="border-radius: 8px; background-color: #e65100;" class="btn-mobile">
+                      <a href="{{buy_url}}" target="_blank" style="display: inline-block; padding: 14px 36px; font-size: 15px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 8px; background-color: #e65100; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">Buy Now &#8594;</a>
+                    </td>
+                    <td width="12">&nbsp;</td>
+                    <!-- Secondary: View Full Details -->
+                    <td style="border-radius: 8px; border: 2px solid #0d1b2a;" class="btn-mobile">
+                      <a href="{{product_url}}" target="_blank" style="display: inline-block; padding: 12px 30px; font-size: 15px; font-weight: 600; color: #0d1b2a; text-decoration: none; border-radius: 6px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">View Full Details</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+          <!-- Trust Badges -->
+          <p style="margin: 16px 0 0; font-size: 12px; color: #888; text-align: center;">{{trust_badges}}</p>
+        </td>
+      </tr>
+
+      <!-- ==================== RELATED PRODUCTS (optional) ==================== -->
+      <!-- {{#if related_products}} -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 28px 36px 0 36px;" class="padding-mobile">
+          <h2 style="margin: 0 0 14px; font-size: 17px; font-weight: 700; color: #0d1b2a;">You Might Also Like</h2>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <!-- {{#each related_products}} -->
+              <td width="33%" style="padding: 4px; text-align: center;" class="stack-column">
+                <a href="{{this.url}}" target="_blank" style="text-decoration: none;">
+                  <img src="{{this.image}}" alt="{{this.name}}" width="170" style="display: block; width: 100%; max-width: 170px; height: auto; border-radius: 6px; border: 1px solid #e8e8e8; margin-bottom: 6px;" class="fluid">
+                  <p style="margin: 0; font-size: 12px; color: #333; font-weight: 600; line-height: 1.3;">{{this.name}}</p>
+                  <p style="margin: 2px 0 0; font-size: 13px; color: #e65100; font-weight: 700;">{{this.price}}</p>
+                </a>
+              </td>
+              <!-- {{/each}} -->
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <!-- {{/if}} -->
+
+      <!-- ==================== DIVIDER ==================== -->
+      <tr>
+        <td style="background-color: #ffffff; padding: 24px 36px 0 36px;" class="padding-mobile">
+          <hr style="border: none; border-top: 1px solid #e8e8e8; margin: 0;">
+        </td>
+      </tr>
+
+      <!-- ==================== FOOTER ==================== -->
+      <tr>
+        <td style="background-color: #0d1b2a; padding: 28px 36px; border-radius: 0 0 12px 12px;" class="padding-mobile">
+          <!-- Social Icons -->
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="text-align: center; padding-bottom: 16px;">
+                <a href="https://instagram.com/barktechnologies" target="_blank" style="display: inline-block; margin: 0 6px; text-decoration: none;">
+                  <img src="https://img.icons8.com/ios-filled/22/ffffff/instagram-new.png" alt="Instagram" width="22" height="22" style="border: 0;">
+                </a>
+                <a href="https://linkedin.com/company/barktechnologies" target="_blank" style="display: inline-block; margin: 0 6px; text-decoration: none;">
+                  <img src="https://img.icons8.com/ios-filled/22/ffffff/linkedin.png" alt="LinkedIn" width="22" height="22" style="border: 0;">
+                </a>
+                <a href="https://youtube.com/@barktechnologies" target="_blank" style="display: inline-block; margin: 0 6px; text-decoration: none;">
+                  <img src="https://img.icons8.com/ios-filled/22/ffffff/youtube-play.png" alt="YouTube" width="22" height="22" style="border: 0;">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <!-- Contact Info -->
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="text-align: center; font-size: 12px; color: #a0a8b8; line-height: 1.7;">
+                <p style="margin: 0 0 4px 0;">
+                  <a href="mailto:{{support_email}}" style="color: #e65100; text-decoration: none;">{{support_email}}</a>
+                  &nbsp;|&nbsp;
+                  <a href="tel:{{support_phone}}" style="color: #e65100; text-decoration: none;">{{support_phone}}</a>
+                </p>
+                <p style="margin: 0 0 4px 0;">{{company_address}}</p>
+                <p style="margin: 0 0 4px 0;">Bark Technology | UDYAM-UP-28-0004163</p>
+              </td>
+            </tr>
+          </table>
+          <!-- Unsubscribe -->
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+            <tr>
+              <td style="text-align: center; font-size: 11px; color: #6b7280; border-top: 1px solid #1b2838; padding-top: 12px; margin-top: 12px;">
+                <p style="margin: 0 0 3px 0;">You are receiving this because you expressed interest in our products.</p>
+                <p style="margin: 0;">
+                  <a href="{{unsubscribe_url}}" style="color: #a0a8b8; text-decoration: underline;">Unsubscribe</a>
+                  &nbsp;|&nbsp;
+                  <a href="https://barktechnologies.in/privacy" style="color: #a0a8b8; text-decoration: underline;">Privacy Policy</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+    </table>
+  </center>
+</body>
+</html>

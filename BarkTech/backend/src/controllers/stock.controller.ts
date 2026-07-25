@@ -5,9 +5,11 @@ import { z } from 'zod';
 const createStockSchema = z.object({
   productId: z.string(),
   quantity: z.number().min(0),
-  reserved: z.number().min(0).optional(),
+  unit: z.string().optional(),
+  minStock: z.number().min(0).optional(),
+  maxStock: z.number().min(0).optional(),
   location: z.string().optional(),
-  lowStockThreshold: z.number().min(0).optional(),
+  notes: z.string().optional(),
 });
 
 const stockActionSchema = z.object({

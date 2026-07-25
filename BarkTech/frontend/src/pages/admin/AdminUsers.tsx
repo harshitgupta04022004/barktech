@@ -16,9 +16,9 @@ interface User {
 }
 
 const roleColors: Record<string, string> = {
-  super_admin: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
-  admin: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
-  client: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  super_admin: 'bg-red-100 text-red-700',
+  admin: 'bg-purple-100 text-purple-700',
+  client: 'bg-blue-100 text-blue-700',
 };
 
 const roles = ['super_admin', 'admin', 'client'];
@@ -88,20 +88,20 @@ export function AdminUsers() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-black dark:text-white">User Management ({total})</h2>
+        <h2 className="text-2xl font-bold text-foreground">User Management ({total})</h2>
         <Button onClick={openCreate}><Plus className="h-4 w-4" /> Add User</Button>
       </div>
 
-      <Card className="dark:bg-gray-900 dark:border-gray-800">
+      <Card>
         <CardContent className="p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             <div className="flex gap-2 flex-wrap">
               {['all', ...roles].map((r) => (
-                <Button key={r} variant={roleFilter === r ? 'default' : 'outline'} size="sm" onClick={() => { setRoleFilter(r); setPage(1); }} className="dark:border-gray-600">
+                <Button key={r} variant={roleFilter === r ? 'default' : 'outline'} size="sm" onClick={() => { setRoleFilter(r); setPage(1); }} className="border-border">
                   {r === 'all' ? 'All' : r.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                 </Button>
               ))}
@@ -109,12 +109,12 @@ export function AdminUsers() {
           </div>
 
           {isLoading ? (
-            <div className="py-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
+            <div className="py-8 text-center text-muted-foreground">Loading...</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-gray-600 dark:text-gray-400">
+                  <tr className="border-b border-border text-left text-muted-foreground">
                     <th className="pb-3 font-medium">User</th>
                     <th className="pb-3 font-medium">Role</th>
                     <th className="pb-3 font-medium">Status</th>
@@ -125,33 +125,33 @@ export function AdminUsers() {
                 </thead>
                 <tbody>
                   {filtered.map((user) => (
-                    <tr key={user._id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                    <tr key={user._id} className="border-b border-border last:border-0">
                       <td className="py-3">
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">
                             {(user.fullName || user.email)?.charAt(0)?.toUpperCase() || '?'}
                           </div>
                           <div>
-                            <div className="font-medium text-black dark:text-white">{user.fullName || user.email}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{user.email}</div>
+                            <div className="font-medium text-foreground">{user.fullName || user.email}</div>
+                            <div className="text-xs text-muted-foreground">{user.email}</div>
                           </div>
                         </div>
                       </td>
                       <td className="py-3">
-                        <span className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${roleColors[user.role] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}`}>
+                        <span className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${roleColors[user.role] || 'bg-muted text-muted-foreground'}`}>
                           <Shield className="inline h-3 w-3 mr-1" />
                           {user.role?.replace('_', ' ')}
                         </span>
                       </td>
                       <td className="py-3">
-                        <span className={`rounded-full px-2 py-1 text-xs font-medium ${user.isActive ? 'bg-green-100 dark:bg-green-900 dark:text-green-300 text-green-700' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-400 text-gray-700'}`}>
+                        <span className={`rounded-full px-2 py-1 text-xs font-medium ${user.isActive ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
                           {user.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="py-3 text-gray-600 dark:text-gray-400">
+                      <td className="py-3 text-muted-foreground">
                         {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('en-IN') : 'Never'}
                       </td>
-                      <td className="py-3 text-gray-600 dark:text-gray-400">{new Date(user.createdAt).toLocaleDateString('en-IN')}</td>
+                      <td className="py-3 text-muted-foreground">{new Date(user.createdAt).toLocaleDateString('en-IN')}</td>
                       <td className="py-3 text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="icon" onClick={() => openEdit(user)}><Edit className="h-4 w-4" /></Button>
@@ -160,7 +160,7 @@ export function AdminUsers() {
                       </td>
                     </tr>
                   ))}
-                  {filtered.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-gray-500 dark:text-gray-400">No users found</td></tr>}
+                  {filtered.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No users found</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -170,21 +170,21 @@ export function AdminUsers() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowModal(false)}>
-          <div className="w-full max-w-md rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-md rounded-xl bg-card border border-border p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-black dark:text-white">{editingItem ? 'Edit' : 'Add'} User</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X className="h-5 w-5" /></button>
+              <h3 className="text-lg font-bold text-foreground">{editingItem ? 'Edit' : 'Add'} User</h3>
+              <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
             <div className="space-y-4">
-              <div><label className="text-sm font-medium text-black dark:text-white">Full Name</label><Input value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} placeholder="John Doe" className="mt-1" /></div>
-              <div><label className="text-sm font-medium text-black dark:text-white">Email</label><Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="user@example.com" className="mt-1" disabled={!!editingItem} /></div>
-              {!editingItem && <div><label className="text-sm font-medium text-black dark:text-white">Password</label><Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Min 8 characters" className="mt-1" /></div>}
+              <div><label className="text-sm font-medium text-foreground">Full Name</label><Input value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} placeholder="John Doe" className="mt-1" /></div>
+              <div><label className="text-sm font-medium text-foreground">Email</label><Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="user@example.com" className="mt-1" disabled={!!editingItem} /></div>
+              {!editingItem && <div><label className="text-sm font-medium text-foreground">Password</label><Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Min 8 characters" className="mt-1" /></div>}
               <div>
-                <label className="text-sm font-medium text-black dark:text-white">Role</label>
+                <label className="text-sm font-medium text-foreground">Role</label>
                 <div className="flex gap-2 mt-2">
                   {roles.map((r) => (
                     <button key={r} type="button" onClick={() => setFormData({ ...formData, role: r })}
-                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${formData.role === r ? 'bg-primary text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}`}>
+                      className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${formData.role === r ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
                       {r.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                     </button>
                   ))}

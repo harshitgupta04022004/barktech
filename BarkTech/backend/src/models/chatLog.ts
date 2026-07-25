@@ -14,7 +14,7 @@ export interface IChatLog {
   userId?: mongoose.Types.ObjectId;
   userEmail?: string;
   userName?: string;
-  source: 'client' | 'admin';
+  source: 'client' | 'admin' | 'super_admin';
   userMessage: string;
   assistantReply: string;
   model: string;
@@ -48,7 +48,7 @@ const chatLogSchema = new Schema<IChatLog>(
     userId: { type: Schema.Types.ObjectId, ref: 'User' },
     userEmail: { type: String },
     userName: { type: String },
-    source: { type: String, enum: ['client', 'admin'], required: true },
+    source: { type: String, enum: ['client', 'admin', 'super_admin'], required: true },
     userMessage: { type: String, required: true },
     assistantReply: { type: String, required: true },
     model: { type: String, default: 'unknown' },

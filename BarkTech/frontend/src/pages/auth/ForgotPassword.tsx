@@ -36,13 +36,13 @@ export function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-4">
-      <Card className="w-full max-w-md dark:bg-gray-900 dark:border-gray-800">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-white font-bold text-xl">BT</div>
           </div>
-          <CardTitle className="text-xl text-black dark:text-white">Reset Password</CardTitle>
+          <CardTitle className="text-xl text-foreground">Reset Password</CardTitle>
           <CardDescription>Enter your email to receive a reset link</CardDescription>
         </CardHeader>
         <CardContent>
@@ -54,9 +54,9 @@ export function ForgotPassword() {
               <div className="rounded-md bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-600 dark:text-green-400">{success}</div>
             )}
             <div>
-              <label className="text-sm font-medium text-black dark:text-white">Email Address</label>
+              <label className="text-sm font-medium text-foreground">Email Address</label>
               <div className="relative mt-1">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="email"
                   value={email}

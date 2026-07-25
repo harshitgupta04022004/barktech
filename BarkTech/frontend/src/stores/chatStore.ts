@@ -3,6 +3,18 @@ import { persist } from 'zustand/middleware';
 import { STORAGE_KEYS } from '@/lib/constants';
 import type { Thread, ChatFile } from '@/api/agentChat';
 
+/** Get current user ID from localStorage (set by auth store) */
+function getCurrentUserId(): string {
+  try {
+    const userStr = localStorage.getItem(STORAGE_KEYS.AUTH_USER);
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      return user._id || user.id || 'anonymous';
+    }
+  } catch { /* ignore */ }
+  return 'anonymous';
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
@@ -16,26 +28,23 @@ export interface ChatMessage {
 }
 
 interface ChatState {
-  // Thread management
   threads: Thread[];
   activeThreadId: string | null;
-
-  // Messages for the active thread
   messages: ChatMessage[];
   isStreaming: boolean;
+  threadMessages: Record<string, ChatMessage[]>;
 
-  // Thread actions
   setThreads: (threads: Thread[]) => void;
   createThread: () => string;
   setActiveThread: (threadId: string | null) => void;
   deleteThread: (threadId: string) => void;
 
-  // Message actions
   addMessage: (message: Omit<ChatMessage, 'id' | 'timestamp'>) => void;
   setStreaming: (streaming: boolean) => void;
   clearMessages: () => void;
   updateLastMessage: (content: string) => void;
   addToolCall: (toolName: string, args: Record<string, unknown>) => void;
+  loadThreadMessages: (threadId: string) => void;
 }
 
 export const useChatStore = create<ChatState>()(
@@ -45,13 +54,15 @@ export const useChatStore = create<ChatState>()(
       activeThreadId: null,
       messages: [],
       isStreaming: false,
+      threadMessages: {},
 
       setThreads: (threads) => {
         set({ threads });
       },
 
       createThread: () => {
-        const threadId = `admin-${crypto.randomUUID().slice(0, 8)}`;
+        const userId = getCurrentUserId();
+        const threadId = `admin-${userId}`;
         const newThread: Thread = {
           thread_id: threadId,
           title: 'New Conversation',
@@ -67,16 +78,24 @@ export const useChatStore = create<ChatState>()(
       },
 
       setActiveThread: (threadId) => {
-        set({ activeThreadId: threadId, messages: [] });
+        if (threadId === null) {
+          set({ activeThreadId: null, messages: [] });
+          return;
+        }
+        const stored = get().threadMessages[threadId] || [];
+        set({ activeThreadId: threadId, messages: stored });
       },
 
       deleteThread: (threadId) => {
-        const { threads, activeThreadId } = get();
+        const { threads, activeThreadId, threadMessages } = get();
         const newThreads = threads.filter((t) => t.thread_id !== threadId);
+        const newThreadMessages = { ...threadMessages };
+        delete newThreadMessages[threadId];
         set({
           threads: newThreads,
           activeThreadId: activeThreadId === threadId ? null : activeThreadId,
           messages: activeThreadId === threadId ? [] : get().messages,
+          threadMessages: newThreadMessages,
         });
       },
 
@@ -86,7 +105,18 @@ export const useChatStore = create<ChatState>()(
           id: crypto.randomUUID(),
           timestamp: Date.now(),
         };
-        set({ messages: [...get().messages, newMessage] });
+        const updatedMessages = [...get().messages, newMessage];
+        set({ messages: updatedMessages });
+
+        const { activeThreadId, threadMessages } = get();
+        if (activeThreadId) {
+          set({
+            threadMessages: {
+              ...threadMessages,
+              [activeThreadId]: updatedMessages,
+            },
+          });
+        }
       },
 
       setStreaming: (streaming) => {
@@ -95,6 +125,15 @@ export const useChatStore = create<ChatState>()(
 
       clearMessages: () => {
         set({ messages: [] });
+        const { activeThreadId, threadMessages } = get();
+        if (activeThreadId) {
+          set({
+            threadMessages: {
+              ...threadMessages,
+              [activeThreadId]: [],
+            },
+          });
+        }
       },
 
       updateLastMessage: (content) => {
@@ -103,6 +142,16 @@ export const useChatStore = create<ChatState>()(
         if (last) {
           messages[messages.length - 1] = { ...last, content };
           set({ messages });
+
+          const { activeThreadId, threadMessages } = get();
+          if (activeThreadId) {
+            set({
+              threadMessages: {
+                ...threadMessages,
+                [activeThreadId]: messages,
+              },
+            });
+          }
         }
       },
 
@@ -116,7 +165,22 @@ export const useChatStore = create<ChatState>()(
             toolCalls: [...toolCalls, { name: toolName, args }],
           };
           set({ messages });
+
+          const { activeThreadId, threadMessages } = get();
+          if (activeThreadId) {
+            set({
+              threadMessages: {
+                ...threadMessages,
+                [activeThreadId]: messages,
+              },
+            });
+          }
         }
+      },
+
+      loadThreadMessages: (threadId) => {
+        const stored = get().threadMessages[threadId] || [];
+        set({ messages: stored });
       },
     }),
     {
@@ -124,6 +188,7 @@ export const useChatStore = create<ChatState>()(
       partialize: (state) => ({
         threads: state.threads,
         activeThreadId: state.activeThreadId,
+        threadMessages: state.threadMessages,
       }),
     }
   )

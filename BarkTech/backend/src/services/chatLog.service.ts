@@ -6,7 +6,7 @@ export class ChatLogService {
     userId?: string;
     userEmail?: string;
     userName?: string;
-    source: 'client' | 'admin';
+    source: 'client' | 'admin' | 'super_admin';
     userMessage: string;
     assistantReply: string;
     model?: string;

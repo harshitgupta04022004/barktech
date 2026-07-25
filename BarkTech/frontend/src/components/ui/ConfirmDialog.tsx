@@ -33,7 +33,7 @@ const ConfirmDialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border border-gray-200 bg-white p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg dark:border-gray-700 dark:bg-gray-900',
+        'fixed left-[50%] top-[50%] z-50 grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 border border-border bg-popover p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
         className
       )}
       {...props}
@@ -86,25 +86,25 @@ export function ConfirmDialog({
         <div className="flex flex-col items-center text-center">
           <div className={cn(
             'mb-4 flex h-12 w-12 items-center justify-center rounded-full',
-            variant === 'danger' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-800'
+            variant === 'danger' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-muted'
           )}>
             <AlertTriangle className={cn(
               'h-6 w-6',
-              variant === 'danger' ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'
+              variant === 'danger' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
             )} />
           </div>
 
-          <DialogPrimitive.Title className="text-lg font-semibold text-black dark:text-white">
+          <DialogPrimitive.Title className="text-lg font-semibold text-card-foreground">
             {title}
           </DialogPrimitive.Title>
 
-          <DialogPrimitive.Description className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <DialogPrimitive.Description className="mt-2 text-sm text-muted-foreground">
             {message}
           </DialogPrimitive.Description>
         </div>
 
         <div className="flex justify-center gap-3 mt-2">
-          <Button variant="outline" onClick={handleCancel} className="flex-1 dark:border-gray-600 dark:text-gray-200">
+          <Button variant="outline" onClick={handleCancel} className="flex-1">
             {cancelText}
           </Button>
           <Button variant={variant === 'danger' ? 'destructive' : 'default'} onClick={handleConfirm} className="flex-1">
